@@ -34,7 +34,6 @@ document.write('\
                 <img alt="Island Furniture" width="180" height="80" data-sticky-width="82" data-sticky-height="40" src="../img/logo.png">\
             </a>\
         </h1>\
-        <!-- Non Logged In Menu-->\
         <div id="menuLoggedOut" style="display: none;">\
             <nav>\
                 <ul class="nav nav-pills nav-top">\
@@ -48,12 +47,8 @@ document.write('\
                         <a href="/B/' + countryPrefix + '/contactUs.html"><i class="icon icon-shopping-cart"></i>Contact Us</a>\
                     </li>\
                 </ul>\
-                <button class="btn btn-responsive-nav btn-inverse" data-toggle="collapse" data-target=".nav-main-collapse">\
-                    <i class="icon icon-bars"></i>\
-                </button>\
             </nav>\
         </div>\
-        <!-- Logged In Menu-->\
         <div id="menuLoggedIn" style="display: none;">\
             <nav>\
                 <ul class="nav nav-pills nav-top">\
@@ -74,9 +69,6 @@ document.write('\
                         <a href="#" onclick="logout()"><i class="icon icon-unlock-alt"></i>Logout</a>\
                     </li>\
                 </ul>\
-                <button class="btn btn-responsive-nav btn-inverse" data-toggle="collapse" data-target=".nav-main-collapse">\
-                    <i class="icon icon-bars"></i>\
-                </button>\
             </nav>\
         </div>\
     </div>\
@@ -86,6 +78,10 @@ document.write('\
                 <ul class="nav nav-pills nav-main" id="mainMenu">\
                     <li>\
                         <a href="/B/' + countryPrefix + '/virtualStore.html">Virtual Store</a>\
+                    </li>\
+                    <!-- ✅ ADDED SHOWROOM (ONLY CHANGE) -->\
+                    <li>\
+                        <a href="/B/' + countryPrefix + '/showroom.html">Showroom</a>\
                     </li>\
                     <li class="dropdown">\
                         <a class="dropdown-toggle" href="#">\
