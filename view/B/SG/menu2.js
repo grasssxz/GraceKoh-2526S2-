@@ -79,14 +79,18 @@ document.write('\
                     <li>\
                         <a href="/B/' + countryPrefix + '/virtualStore.html">Virtual Store</a>\
                     </li>\
-                    <!-- ✅ ADDED SHOWROOM (ONLY CHANGE) -->\
-                    <li>\
-                        <a href="/B/' + countryPrefix + '/showroom.html">Showroom</a>\
+                    <li class="dropdown">\
+                        <a class="dropdown-toggle" href="#">\ Show Room<i class="icon icon-angle-down"></i>\ </a>\
+                        <ul class="dropdown-menu">\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?cat=BathRoom"><i class="icon icon-map-marker"></i> Bathroom</a></li>\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?cat=bedRoom"><i class="icon icon-map-marker"></i> Bed Room</a></li>\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?cat=studyRoom"><i class="icon icon-map-marker"></i> Study Room</a></li>\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?cat=childrenRoom"><i class="icon icon-map-marker"></i> Children Room</a></li>\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?cat=livingRoom"><i class="icon icon-map-marker"></i> Living Room</a></li>\
+                        </ul>\
                     </li>\
                     <li class="dropdown">\
-                        <a class="dropdown-toggle" href="#">\
-                            All Departments<i class="icon icon-angle-down"></i>\
-                        </a>\
+                        <a class="dropdown-toggle" href="#">\ Departments<i class="icon icon-angle-down"></i>\ </a>\
                         <ul class="dropdown-menu">\
                             <li><a id="tableDeskLink"><i class="icon icon-map-marker"></i> Tables & Desk</a></li>\
                             <li><a href="/B/' + countryPrefix + '/furnitureCategory.html?cat=Bathroom"><i class="icon icon-map-marker"></i> Bathroom</a></li>\
