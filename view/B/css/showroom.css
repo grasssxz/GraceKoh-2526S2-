@@ -1,0 +1,48 @@
+/* Full-width showroom container */
+.showroom-container {
+  position: relative;
+  width: 100vw;              /* FULL viewport width */
+  margin-left: calc(-50vw + 50%);
+}
+
+/* Image fills screen */
+.showroom-image {
+  width: 100vw;
+  height: auto;
+  display: block;
+}
+
+
+
+.hotspot {
+  position: absolute;
+  z-index: 10;
+  cursor: pointer;
+}
+
+.hotspot:hover {
+  outline: 4px solid rgba(255, 0, 0, 0.9);   
+  outline-offset: -2px;                    
+  background-color: rgba(255, 0, 0, 0.08); 
+}
+
+/*tooltip container */
+.tooltip-inner {
+  max-width: 320px;          
+  padding: 12px 16px;        
+  font-size: 16px;          
+  line-height: 1.5;
+  text-align: left;
+}
+
+.tooltip-inner strong {
+  font-size: 18px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+
+/* .tooltip {
+  z-index: 9999 !important;
+} */
+

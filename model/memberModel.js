@@ -18,37 +18,49 @@ var memberDB = {
                 }
                 else {
                     var sql = 'SELECT * FROM memberentity m WHERE m.EMAIL=?';
-                    conn.query( sql, [email], (err, result) => {
-                        if (err){
-                            conn.end();
-                            return reject(err);
-                        }
-                        else {
-                            if(result == null || result == undefined || result == '') {
-                                conn.end();
-                                return resolve({success:false});
-                            }
-                            var member = new Member();
-                            member.email = result[0].EMAIL;
-                            member.passwordHash = result[0].PASSWORDHASH;
+                    console.log("👉 Login attempt:", email);
 
-                            bcrypt.compare(password, member.passwordHash, function(err, res) {
-                                if(res) {
-                                    var token = jwt.sign({username: member.email},
-                                        config.secret,
-                                        { 
-                                            expiresIn: '12h'
-                                        }
-                                    );
-                                    conn.end();
-                                    return resolve({success:true, email:member.email, token: token});
-                                } else {
-                                    conn.end();
-                                    return resolve({success:false});
-                                }
-                            });
-                        }
-                    });
+conn.query(sql, [email], (err, result) => {
+  if (err) {
+    console.log("❌ SQL error:", err);
+    conn.end();
+    return reject(err);
+  }
+
+  console.log("📦 SQL result:", result);
+
+  if (!result || result.length === 0) {
+    console.log("❌ No member found");
+    conn.end();
+    return resolve({ success: false });
+  }
+
+  var member = new Member();
+  member.email = result[0].EMAIL;
+  member.passwordHash = result[0].PASSWORDHASH;
+
+  console.log("🔑 Hash from DB:", member.passwordHash);
+  
+
+  bcrypt.compare(password, member.passwordHash, function(err, isMatch) {
+    console.log("🔍 bcrypt result:", isMatch);
+
+    if (isMatch) {
+      var token = jwt.sign(
+        { username: member.email },
+        config.secret,
+        { expiresIn: '12h' }
+      );
+
+      conn.end();
+      return resolve({ success: true, email: member.email, token });
+    } else {
+      conn.end();
+      return resolve({ success: false });
+    }
+  });
+});
+
                 }
             });
         });
@@ -526,9 +538,15 @@ var memberDB = {
 
                             bcrypt.compare(password, member.passwordHash, function(err, res) {
                                 if(res) {
+                                    console.log("Plain:", password);
+console.log("Hash:", member.passwordHash);
+
                                     conn.end();
                                     return resolve({success:true});
                                 } else {
+                                    console.log("Plain:", password);
+console.log("Hash:", member.passwordHash);
+
                                     conn.end();
                                     return resolve({success:false});
                                 }

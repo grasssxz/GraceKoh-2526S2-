@@ -6,76 +6,37 @@
         <script>
             var countryPrefix = localStorage.getItem('urlPrefix');
             function login() {
-                var email = document.getElementById("emailLogin").value;
-                var password = document.getElementById("passwordLogin").value;
-                if(document.getElementById("loginForm").checkValidity()){
-                    var data = {
-                        email: email,
-                        password: password
-                    };
+  var email = document.getElementById("emailLogin").value;
+  var password = document.getElementById("passwordLogin").value;
 
-                    //Check if member's email and password is valid
-                    fetch(new Request('/api/loginMember',
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(data)
-                    })).then(function (response) {
-                        return response.json();
-                    }).then(function (data) {
-                        //if email or password is incorrect
-                        if(!data.success) {
-                            var url = window.location.origin + window.location.pathname;
-                            window.location.href = url + '?errMsg=Login fail. Email or password is incorrect.';
-                        }
-                        else {
-                            //Get Member Authentication State
-                            fetch(new Request('/api/memberAuthState?email=' + email,
-                            {
-                                method: 'GET',
-                                headers: {
-                                    Authorization: 'Bearer ' + data.token
-                                }
-                            })).then(function (response) {
-                                return response.json();
-                            }).then(function (member) {
-                                //if account is authenticated
-                                if (member.accountActivationStatus == 1) {
-                                    sessionStorage.setItem("token", data.token);
-                                    //Get Member
-                                    fetch(new Request('/api/getMember?email=' + email,
-                                    {
-                                        method: 'GET'
-                                    })).then(function (response) {
-                                        return response.json();
-                                    }).then(function (member) {
-                                        //store member's detail in session
-                                        sessionStorage.setItem('memberEmail', email);
-                                        sessionStorage.setItem('memberName', member.name);
-                                        sessionStorage.setItem('member', JSON.stringify(member));
+  console.log("👉 Login clicked");
+  console.log("📧 Email:", email);
+  console.log("🔑 Password:", password);
 
-                                        //redirect to memberProfile.html
-                                        window.location.href = "/B/" + countryPrefix + "/memberProfile.html";
-                                    }).catch(function(error) {
-                                        console.log(error);
-                                    });
-                                }
-                                //if account is not authenticated
-                                else {
-                                    var url = window.location.origin + window.location.pathname;
-                                    window.location.href = url + '?errMsg=Email ' + email + ' has not been verified. Please go to your email to activate your account before logging in.';
-                                }
-                            }).catch(function(error) {
-                                console.log(error);
-                            });
-                        }
-                    }).catch(function(error) {
-                        console.log(error);
-                    });
-                }
-            }
+  if (document.getElementById("loginForm").checkValidity()) {
+    fetch('/api/loginMember', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    })
+    .then(res => {
+      console.log("📡 Login response status:", res.status);
+      return res.json();
+    })
+    .then(data => {
+      console.log("📦 Login response body:", data);
+
+      if (!data.success) {
+        alert("Login failed");
+      } else {
+        console.log("✅ Login success, token:", data.token);
+      }
+    })
+    .catch(err => {
+      console.error("❌ Login fetch error:", err);
+    });
+  }
+}
             
             function register() {
                 var email = document.getElementById("emailReg").value;
