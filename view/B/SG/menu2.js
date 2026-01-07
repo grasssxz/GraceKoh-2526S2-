@@ -82,11 +82,11 @@ document.write('\
                     <li class="dropdown">\
                         <a class="dropdown-toggle" href="#">\ Show Room<i class="icon icon-angle-down"></i>\ </a>\
                         <ul class="dropdown-menu">\
-                            <li><a href="/B/' + countryPrefix + '/showRoom.html?cat=BathRoom"><i class="icon icon-map-marker"></i> Bathroom</a></li>\
-                            <li><a href="/B/' + countryPrefix + '/showRoom.html?cat=bedRoom"><i class="icon icon-map-marker"></i> Bed Room</a></li>\
-                            <li><a href="/B/' + countryPrefix + '/showRoom.html?cat=studyRoom"><i class="icon icon-map-marker"></i> Study Room</a></li>\
-                            <li><a href="/B/' + countryPrefix + '/showRoom.html?cat=childrenRoom"><i class="icon icon-map-marker"></i> Children Room</a></li>\
-                            <li><a href="/B/' + countryPrefix + '/showRoom.html?cat=livingRoom"><i class="icon icon-map-marker"></i> Living Room</a></li>\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?room=BathRoom"><i class="icon icon-map-marker"></i> Bathroom</a></li>\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?room=bedRoom"><i class="icon icon-map-marker"></i> Bed Room</a></li>\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?room=StudyRoom"><i class="icon icon-map-marker"></i> Study Room</a></li>\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?room=ChildrenRoom"><i class="icon icon-map-marker"></i> Children Room</a></li>\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?room=LivingRoom"><i class="icon icon-map-marker"></i> Living Room</a></li>\
                         </ul>\
                     </li>\
                     <li class="dropdown">\
