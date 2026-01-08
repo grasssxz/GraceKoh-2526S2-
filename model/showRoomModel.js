@@ -1,8 +1,5 @@
 var db = require('./databaseConfig.js');
 
-
-var db = require('./databaseConfig.js');
-
 module.exports.getShowRoomByName = function (name) {
     return new Promise(function (resolve, reject) {
         var conn = db.getConnection();
