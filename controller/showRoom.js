@@ -12,19 +12,21 @@ app.get('/api/__test_showroom', function (req, res) {
 /*GET showroom by name (USED BY DROPDOWN)*/
 app.get('/api/getShowRoomByName', function (req, res) {
     var name = req.query.name;
+    var countryId = req.query.countryId;
 
-    showRoom.getShowRoomByName(name)
-        .then((result) => {
+    showRoom.getShowRoomByName(name, countryId)
+        .then(result => {
             if (!result) {
                 return res.status(404).send("Showroom not found");
             }
             res.send(result);
         })
-        .catch((err) => {
+        .catch(err => {
             console.log(err);
             res.status(500).send("Failed to get showroom by name");
         });
 });
+
 
 
 /*

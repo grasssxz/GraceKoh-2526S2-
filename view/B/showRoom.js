@@ -1,11 +1,19 @@
 var countryPrefix = localStorage.getItem("urlPrefix");
 var roomName = new URLSearchParams(window.location.search).get("room");
+var countryId = localStorage.getItem("countryId");   
 
-if (!roomName) {
+
+
+if (!roomName || !countryId) {
   window.location.href = "/B/" + countryPrefix + "/index.html";
 }
 
-fetch("/api/getShowRoomByName?name=" + encodeURIComponent(roomName))
+
+fetch(
+  "/api/getShowRoomByName?name=" +
+  encodeURIComponent(roomName) +
+  "&countryId=" + countryId
+)
   .then(res => res.json())
   .then(data => {
 
@@ -28,8 +36,11 @@ fetch("/api/getShowRoomByName?name=" + encodeURIComponent(roomName))
       hotspot.setAttribute("data-bs-toggle", "tooltip");
       hotspot.setAttribute(
         "data-bs-title",
-        "<strong>" + item.name + "</strong><br>" + item.description
+        "<strong>" + item.name + "</strong><br>" +
+        item.description + "<br><br>" +
+        "<strong>Price:</strong> $" + item.price
       );
+
       hotspot.setAttribute("data-bs-html", "true");
 
       hotspot.onclick = function () {
@@ -51,7 +62,7 @@ function initTooltips() {
     .forEach(el => {
       new bootstrap.Tooltip(el, {
         container: 'body',
-        placement: 'right',   
+        placement: 'right',
         trigger: 'hover'
       });
     });
