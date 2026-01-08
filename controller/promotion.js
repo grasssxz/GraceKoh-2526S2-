@@ -23,4 +23,25 @@ router.get('/api/getAllPromotions', function (req, res) {
     });
 });
 
+router.get('/api/getBestPromotion', function (req, res) {
+  const { countryId } = req.query;
+
+  if (!countryId) {
+    return res.status(400).json({ error: 'countryId is required' });
+  }
+
+  promotionModel.getBestPromotionByCountry(countryId)
+    .then((promo) => {
+      if (!promo) {
+        return res.status(404).send('No promotion found');
+      }
+      res.json(promo);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send('Failed to retrieve best promotion');
+    });
+});
+
+
 module.exports = router;
