@@ -5,37 +5,50 @@ document.addEventListener("DOMContentLoaded", function () {
     fetch(`/api/getAllPromotions?countryId=${countryId}`)
         .then((res) => res.json())
         .then((data) => {
-            data.forEach((promo) => {
-                const card = document.createElement("div");
-                card.className = "promo-card";
-                card.style.backgroundImage = `url(${promo.imageURL})`;
+    if (!data || data.length === 0) {
+        promoList.innerHTML = `
+            <div class="no-promo-message">
+                There is currently no promotion.
+            </div>
+        `;
+        return;
+    }
 
-                const overlay = document.createElement("div");
-                overlay.className = "promo-overlay";
+    data.forEach((promo) => {
+        const card = document.createElement("div");
+        card.className = "promo-card";
+        card.style.backgroundImage = `url(${promo.imageURL})`;
 
-                overlay.innerHTML = `
-  <div class="promo-gradient"></div>
+        const overlay = document.createElement("div");
+        overlay.className = "promo-overlay";
 
-  <div class="promo-content">
-    <div class="promo-title">${promo.description}</div>
-    <div class="promo-discount">${promo.discountRate}% OFF</div>
-    <button class="shop-btn">SHOP NOW</button>
-  </div>
-`;
+        overlay.innerHTML = `
+            <div class="promo-gradient"></div>
 
+            <div class="promo-content">
+                <div class="promo-title">${promo.description}</div>
+                <div class="promo-discount">${promo.discountRate}% OFF</div>
+                <button class="shop-btn">SHOP NOW</button>
+            </div>
+        `;
 
-                overlay.querySelector(".shop-btn").addEventListener("click", () => {
-                    window.location.href =
-                        `/B/SG/furnitureProductDetails.html?sku=${promo.sku}`;
-                });
-
-                card.appendChild(overlay);
-                promoList.appendChild(card);
-            });
-        })
-        .catch((err) => {
-            console.error("Failed to load promotions", err);
-            promoList.innerHTML =
-                "<p class='text-center'>Failed to load promotions.</p>";
+        overlay.querySelector(".shop-btn").addEventListener("click", () => {
+            window.location.href =
+                `/B/SG/furnitureProductDetails.html?sku=${promo.sku}`;
         });
+
+        card.appendChild(overlay);
+        promoList.appendChild(card);
+    });
+})
+
+.catch((err) => {
+    console.error("Failed to load promotions", err);
+    promoList.innerHTML = `
+        <div class="no-promo-message">
+            There is currently no promotion.
+        </div>
+    `;
+});
+
 });

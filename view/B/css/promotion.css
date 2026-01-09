@@ -97,3 +97,16 @@
 .shop-btn:hover {
   background-color: #e65c00;
 }
+
+
+.no-promo-message {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 28px;
+  font-weight: 600;
+  color: #777;
+  text-align: center;
+}
