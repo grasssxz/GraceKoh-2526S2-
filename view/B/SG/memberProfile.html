@@ -6,7 +6,7 @@
             var authToken = null;
             var countryPrefix = localStorage.getItem('urlPrefix');
             //get token from session
-            authToken = sessionStorage.getItem('token');
+            authToken = localStorage.getItem('token');
             if (authToken == null || authToken == "") {
                 window.location.href = '/B/' + countryPrefix + '/memberLogin.html';
             }
@@ -28,7 +28,7 @@
 
             var member = null;
             document.addEventListener('DOMContentLoaded', function(){
-                member = JSON.parse(sessionStorage.getItem("member"));
+                member = JSON.parse(localStorage.getItem("member"));
 
                 if(member.sla == 1) {
                     document.getElementById("serviceLevelAgreement").checked = true;
@@ -265,9 +265,9 @@
                             return response.json();
                         }).then(function (data) {
                             //update member's info in the session storage
-                            sessionStorage.setItem("member", JSON.stringify(data));
-                            sessionStorage.setItem("memberEmail", data.email);
-                            sessionStorage.setItem("memberName", data.name);
+                            localStorage.setItem("member", JSON.stringify(data));
+                            localStorage.setItem("memberEmail", data.email);
+                            localStorage.setItem("memberName", data.name);
                             var url = window.location.origin + window.location.pathname;
                             window.location.href = url + '?goodMsg=Successfully Updated!';
                         }).catch(function (error) {

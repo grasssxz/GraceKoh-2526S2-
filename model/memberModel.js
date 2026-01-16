@@ -18,19 +18,17 @@ var memberDB = {
                 }
                 else {
                     var sql = 'SELECT * FROM memberentity m WHERE m.EMAIL=?';
-                    console.log("👉 Login attempt:", email);
 
 conn.query(sql, [email], (err, result) => {
   if (err) {
-    console.log("❌ SQL error:", err);
+    console.log("SQL error:", err);
     conn.end();
     return reject(err);
   }
 
-  console.log("📦 SQL result:", result);
+  //console.log("📦 SQL result:", result);
 
   if (!result || result.length === 0) {
-    console.log("❌ No member found");
     conn.end();
     return resolve({ success: false });
   }
@@ -39,11 +37,9 @@ conn.query(sql, [email], (err, result) => {
   member.email = result[0].EMAIL;
   member.passwordHash = result[0].PASSWORDHASH;
 
-  console.log("🔑 Hash from DB:", member.passwordHash);
   
 
   bcrypt.compare(password, member.passwordHash, function(err, isMatch) {
-    console.log("🔍 bcrypt result:", isMatch);
 
     if (isMatch) {
       var token = jwt.sign(

@@ -78,20 +78,20 @@ app.get('/api/getPasswordResetCode', function (req, res) {
 var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json({ extended: false });
 app.post('/api/loginMember', jsonParser, function (req, res) {
-      console.log("🔥 LOGIN ROUTE HIT");
+      console.log("LOGIN ROUTE HIT");
 
     var email = req.body.email;
     var password = req.body.password;
 
-    console.log("👉 /api/loginMember hit:", email);
+    console.log("/api/loginMember hit:", email);
 
     member.checkMemberLogin(email, password)
         .then((result) => {
-            console.log("📤 Sending login result:", result);
-            res.json(result);   // ✅ IMPORTANT
+            console.log("Sending login result:", result);
+            res.json(result); 
         })
         .catch((err) => {
-            console.log("❌ Login error:", err);
+            console.log(" Login error:", err);
             res.status(500).json({ success: false, error: "Server error" });
         });
 });
