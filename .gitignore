@@ -1,0 +1,9 @@
+# Node
+node_modules/
+
+# Environment / config
+.env
+model/databaseConfig.js
+
+# OS
+.DS_Store
