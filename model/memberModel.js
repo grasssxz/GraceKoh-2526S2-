@@ -8,7 +8,7 @@ let jwt = require('jsonwebtoken');
 let config = require('./config');
 var memberDB = {
     checkMemberLogin: function (email, password) {
-        return new Promise( ( resolve, reject ) => {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -19,50 +19,50 @@ var memberDB = {
                 else {
                     var sql = 'SELECT * FROM memberentity m WHERE m.EMAIL=?';
 
-conn.query(sql, [email], (err, result) => {
-  if (err) {
-    console.log("SQL error:", err);
-    conn.end();
-    return reject(err);
-  }
+                    conn.query(sql, [email], (err, result) => {
+                        if (err) {
+                            console.log("SQL error:", err);
+                            conn.end();
+                            return reject(err);
+                        }
 
-  //console.log("📦 SQL result:", result);
+                        //console.log("📦 SQL result:", result);
 
-  if (!result || result.length === 0) {
-    conn.end();
-    return resolve({ success: false });
-  }
+                        if (!result || result.length === 0) {
+                            conn.end();
+                            return resolve({ success: false });
+                        }
 
-  var member = new Member();
-  member.email = result[0].EMAIL;
-  member.passwordHash = result[0].PASSWORDHASH;
+                        var member = new Member();
+                        member.email = result[0].EMAIL;
+                        member.passwordHash = result[0].PASSWORDHASH;
 
-  
 
-  bcrypt.compare(password, member.passwordHash, function(err, isMatch) {
 
-    if (isMatch) {
-      var token = jwt.sign(
-        { username: member.email },
-        config.secret,
-        { expiresIn: '12h' }
-      );
+                        bcrypt.compare(password, member.passwordHash, function (err, isMatch) {
 
-      conn.end();
-      return resolve({ success: true, email: member.email, token });
-    } else {
-      conn.end();
-      return resolve({ success: false });
-    }
-  });
-});
+                            if (isMatch) {
+                                var token = jwt.sign(
+                                    { username: member.email },
+                                    config.secret,
+                                    { expiresIn: '12h' }
+                                );
+
+                                conn.end();
+                                return resolve({ success: true, email: member.email, token });
+                            } else {
+                                conn.end();
+                                return resolve({ success: false });
+                            }
+                        });
+                    });
 
                 }
             });
         });
     },
     getMemberAuthState: function (email) {
-        return new Promise( ( resolve, reject ) => {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -88,7 +88,7 @@ conn.query(sql, [email], (err, result) => {
         });
     },
     getMember: function (email) {
-        return new Promise( ( resolve, reject ) => {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -141,7 +141,7 @@ conn.query(sql, [email], (err, result) => {
         });
     },
     getBoughtItem: function (id) {
-        return new Promise( ( resolve, reject ) => {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -151,19 +151,19 @@ conn.query(sql, [email], (err, result) => {
                 }
                 else {
                     var sql = "SELECT i.SKU,i.NAME as 'ITEM_NAME',ic.RETAILPRICE,li.QUANTITY,sr.CREATEDDATE,f.IMAGEURL,sr.ID,"
-                        +" d.NAME, d.DELIVERY_ADDRESS, d.POSTAL_CODE, d.CONTACT"
-                        +" FROM itementity i,item_countryentity ic,lineitementity li,salesrecordentity sr,"
-                        +" salesrecordentity_lineitementity sl,furnitureentity f, deliverydetailsentity d"
-                        +" WHERE sr.MEMBER_ID=? AND d.SALERECORD_ID = sr.id AND i.ID=ic.ITEM_ID AND"
-                        +" ic.COUNTRY_ID=25 AND li.ITEM_ID=i.ID AND sr.ID=sl.SalesRecordEntity_ID AND"
-                        +" li.ID=sl.itemsPurchased_ID AND f.ID=i.ID";
+                        + " d.NAME, d.DELIVERY_ADDRESS, d.POSTAL_CODE, d.CONTACT"
+                        + " FROM itementity i,item_countryentity ic,lineitementity li,salesrecordentity sr,"
+                        + " salesrecordentity_lineitementity sl,furnitureentity f, deliverydetailsentity d"
+                        + " WHERE sr.MEMBER_ID=? AND d.SALERECORD_ID = sr.id AND i.ID=ic.ITEM_ID AND"
+                        + " ic.COUNTRY_ID=25 AND li.ITEM_ID=i.ID AND sr.ID=sl.SalesRecordEntity_ID AND"
+                        + " li.ID=sl.itemsPurchased_ID AND f.ID=i.ID";
                     conn.query(sql, [id], function (err, result) {
                         if (err) {
                             conn.end();
                             return reject(err);
                         } else {
                             var itemList = [];
-                            for(var i = 0; i < result.length; i++) {
+                            for (var i = 0; i < result.length; i++) {
                                 var boughtItems = new ShoppingCartLineItem();
                                 boughtItems.id = result[i].ID;
                                 boughtItems.sku = result[i].SKU;
@@ -187,7 +187,7 @@ conn.query(sql, [email], (err, result) => {
         });
     },
     checkMemberEmailExists: function (email) {
-        return new Promise( ( resolve, reject ) => {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -202,7 +202,7 @@ conn.query(sql, [email], (err, result) => {
                             conn.end();
                             return reject(err);
                         } else {
-                            if(result.length == 0) {
+                            if (result.length == 0) {
                                 conn.end();
                                 return resolve(false);
                             }
@@ -217,7 +217,7 @@ conn.query(sql, [email], (err, result) => {
         });
     },
     registerMember: function (email, password, hostName) {
-        return new Promise( ( resolve, reject ) => {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -226,7 +226,7 @@ conn.query(sql, [email], (err, result) => {
                     return reject(err);
                 }
                 else {
-                    bcrypt.hash(password, 5, function(err, hash) {
+                    bcrypt.hash(password, 5, function (err, hash) {
                         var activationCode = generateRandomNumber(40);
                         var passwordReset = generateRandomNumber(40);
                         var sqlArgs = [activationCode, email, new Date(), hash, passwordReset];
@@ -237,7 +237,7 @@ conn.query(sql, [email], (err, result) => {
                                 conn.end();
                                 return reject(err);
                             } else {
-                                if(result.affectedRows > 0) {
+                                if (result.affectedRows > 0) {
                                     var mailOptions = {
                                         from: 'islandfurnituresep@gmail.com',
                                         to: email,
@@ -246,13 +246,13 @@ conn.query(sql, [email], (err, result) => {
                                             + 'Click on the link below to activate your Island Furniture account: \n\n'
                                             + 'http://' + hostName + '/activateMemberAccount.html?email=' + email + '&activateCode=' + activationCode
                                     };
-                                    emailer.sendMail(mailOptions, function(error, info){
+                                    emailer.sendMail(mailOptions, function (error, info) {
                                         if (error) {
                                             console.log(error);
                                         }
                                     });
                                     conn.end();
-                                    return resolve({success:true});
+                                    return resolve({ success: true });
                                 }
                             }
                         });
@@ -262,7 +262,7 @@ conn.query(sql, [email], (err, result) => {
         });
     },
     getMemberActivateCode: function (email) {
-        return new Promise( ( resolve, reject ) => {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -288,7 +288,7 @@ conn.query(sql, [email], (err, result) => {
         });
     },
     memberActivateAccount: function (email) {
-        return new Promise( ( resolve, reject ) => {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -303,9 +303,9 @@ conn.query(sql, [email], (err, result) => {
                             conn.end();
                             return reject(err);
                         } else {
-                            if(result.affectedRows > 0) {
+                            if (result.affectedRows > 0) {
                                 conn.end();
-                                return resolve({success:true});
+                                return resolve({ success: true });
                             }
                         }
                     });
@@ -313,67 +313,27 @@ conn.query(sql, [email], (err, result) => {
             });
         });
     },
-    updateMember: function (details) {
-        return new Promise( ( resolve, reject ) => {
-            var conn = db.getConnection();
-            conn.connect(function (err) {
-                if (err) {
-                    console.log(err);
-                    conn.end();
-                    return reject(err);
-                }
-                else {
-                    var email = details.email;
-                    var name = details.name;
-                    var phone = details.phone;
-                    var country = details.country;
-                    var address = details.address;
-                    var securityQuestion = details.securityQuestion;
-                    var securityAnswer = details.securityAnswer;
-                    var age = details.age;
-                    var income = details.income;
-                    var sla = details.sla;
-                    var password = details.password;
-                    if(password == null || password == '') {
-                        var sql = 'UPDATE memberentity SET NAME=?, PHONE=?, CITY=?, ADDRESS=?, SECURITYQUESTION=?,'
-                        + 'SECURITYANSWER=?, AGE=?, INCOME=?, SERVICELEVELAGREEMENT=? WHERE EMAIL=?';
-                        var sqlArgs = [name,phone,country,address,securityQuestion,securityAnswer,age,income,sla,email];
-                        conn.query(sql, sqlArgs, function (err, result) {
-                            if (err) {
-                                conn.end();
-                                return reject(err);
-                            } else {
-                                if(result.affectedRows > 0) {
-                                    conn.end();
-                                    return resolve({success:true});
-                                }
-                            }
-                        });
-                    }
-                    else {
-                        bcrypt.hash(password, 5, function(err, hash) {
-                            var sql = 'UPDATE memberentity SET NAME=?, PHONE=?, CITY=?, ADDRESS=?, SECURITYQUESTION=?,'
-                                + 'SECURITYANSWER=?, AGE=?, INCOME=?, SERVICELEVELAGREEMENT=?, PASSWORDHASH=? WHERE EMAIL=?';
-                            var sqlArgs = [name,phone,country,address,securityQuestion,securityAnswer,age,income,sla,hash,email];
-                            conn.query(sql, sqlArgs, function (err, result) {
-                                if (err) {
-                                    conn.end();
-                                    return reject(err);
-                                } else {
-                                    if(result.affectedRows > 0) {
-                                        conn.end();
-                                        return resolve({success:true});
-                                    }
-                                }
-                            });
-                        });
-                    }
-                }
-            });
+    updateMemberProfile(details) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+      UPDATE memberentity
+      SET NAME=?, PHONE=?, CITY=?, ADDRESS=?, SECURITYQUESTION=?,
+          SECURITYANSWER=?, AGE=?, INCOME=?, SERVICELEVELAGREEMENT=?
+      WHERE EMAIL=?
+    `;
+            const args = [
+                details.name, details.phone, details.country,
+                details.address, details.securityQuestion,
+                details.securityAnswer, details.age,
+                details.income, details.sla, details.email
+            ];
+            db.query(sql, args, err =>
+                err ? reject(err) : resolve({ success: true })
+            );
         });
     },
     sendPasswordResetCode: function (email, url) {
-        return new Promise( ( resolve, reject ) => {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -394,17 +354,17 @@ conn.query(sql, [email], (err, result) => {
                                 to: email,
                                 subject: 'Island Furniture Member Password Reset',
                                 text: 'Greetings from Island Furniture... \n\n'
-                                + 'Here is your activation code to be keyed in in order to reset your member account password :\n\n'
-                                + 'Activation Code: ' + member.PASSWORDRESET + '\n\n'
-                                + 'Link to reset your password: http://' + url + '/memberResetPassword.html?email=' + email
+                                    + 'Here is your activation code to be keyed in in order to reset your member account password :\n\n'
+                                    + 'Activation Code: ' + member.PASSWORDRESET + '\n\n'
+                                    + 'Link to reset your password: http://' + url + '/memberResetPassword.html?email=' + email
                             };
-                            emailer.sendMail(mailOptions, function(error, info){
+                            emailer.sendMail(mailOptions, function (error, info) {
                                 if (error) {
                                     console.log(error);
                                 }
                             });
                             conn.end();
-                            return resolve({success: true});
+                            return resolve({ success: true });
                         }
                     });
                 }
@@ -412,7 +372,7 @@ conn.query(sql, [email], (err, result) => {
         });
     },
     getPasswordResetCode: function (email) {
-        return new Promise( ( resolve, reject ) => {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -438,7 +398,7 @@ conn.query(sql, [email], (err, result) => {
         });
     },
     updateMemPasswordAndResetCode: function (email, password) {
-        return new Promise( ( resolve, reject ) => {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -447,17 +407,17 @@ conn.query(sql, [email], (err, result) => {
                     return reject(err);
                 }
                 else {
-                    bcrypt.hash(password, 5, function(err, hash) {
+                    bcrypt.hash(password, 5, function (err, hash) {
                         var sql = 'UPDATE memberentity SET PASSWORDHASH=?,PASSWORDRESET=? WHERE EMAIL=?';
-                        var sqlArgs = [hash,generateRandomNumber(40),email];
+                        var sqlArgs = [hash, generateRandomNumber(40), email];
                         conn.query(sql, sqlArgs, function (err, result) {
                             if (err) {
                                 conn.end();
                                 return reject(err);
                             } else {
-                                if(result.affectedRows > 0) {
+                                if (result.affectedRows > 0) {
                                     conn.end();
-                                    return resolve({success:true});
+                                    return resolve({ success: true });
                                 }
                             }
                         });
@@ -467,7 +427,7 @@ conn.query(sql, [email], (err, result) => {
         });
     },
     sendFeedback: function (name, email, subject, message) {
-        return new Promise( ( resolve, reject ) => {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -482,7 +442,7 @@ conn.query(sql, [email], (err, result) => {
                             conn.end();
                             return reject(err);
                         } else {
-                            if(result.affectedRows > 0) {
+                            if (result.affectedRows > 0) {
                                 var mailOptions = {
                                     from: 'islandfurnituresep@gmail.com',
                                     to: 'islandfurnituresep@gmail.com',
@@ -493,13 +453,13 @@ conn.query(sql, [email], (err, result) => {
                                         + '\nSubject: ' + subject
                                         + '\nMessage:\n\n' + message
                                 };
-                                emailer.sendMail(mailOptions, function(error, info){
+                                emailer.sendMail(mailOptions, function (error, info) {
                                     if (error) {
                                         console.log(error);
                                     }
                                 });
                                 conn.end();
-                                return resolve({success:true});
+                                return resolve({ success: true });
                             }
                         }
                     });
@@ -508,7 +468,7 @@ conn.query(sql, [email], (err, result) => {
         });
     },
     verifyPassword: function (id, password) {
-        return new Promise( ( resolve, reject ) => {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -518,33 +478,33 @@ conn.query(sql, [email], (err, result) => {
                 }
                 else {
                     var sql = 'SELECT * FROM memberentity m WHERE m.ID=?';
-                    conn.query( sql, [id], (err, result) => {
-                        if (err){
+                    conn.query(sql, [id], (err, result) => {
+                        if (err) {
                             conn.end();
                             return reject(err);
                         }
                         else {
-                            if(result == null || result == undefined || result == '') {
+                            if (result == null || result == undefined || result == '') {
                                 conn.end();
-                                return resolve({success:false});
+                                return resolve({ success: false });
                             }
                             var member = new Member();
                             member.email = result[0].EMAIL;
                             member.passwordHash = result[0].PASSWORDHASH;
 
-                            bcrypt.compare(password, member.passwordHash, function(err, res) {
-                                if(res) {
+                            bcrypt.compare(password, member.passwordHash, function (err, res) {
+                                if (res) {
                                     console.log("Plain:", password);
-console.log("Hash:", member.passwordHash);
+                                    console.log("Hash:", member.passwordHash);
 
                                     conn.end();
-                                    return resolve({success:true});
+                                    return resolve({ success: true });
                                 } else {
                                     console.log("Plain:", password);
-console.log("Hash:", member.passwordHash);
+                                    console.log("Hash:", member.passwordHash);
 
                                     conn.end();
-                                    return resolve({success:false});
+                                    return resolve({ success: false });
                                 }
                             });
                         }
@@ -554,7 +514,7 @@ console.log("Hash:", member.passwordHash);
         });
     },
     updateMemberStripeCustomerId: function (email, customerId) {
-        return new Promise( ( resolve, reject ) => {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -564,14 +524,14 @@ console.log("Hash:", member.passwordHash);
                 }
                 else {
                     var sql = 'UPDATE memberentity SET STRIPECUSTOMERID=? WHERE EMAIL=?';
-                    conn.query(sql, [customerId,email], function (err, result) {
+                    conn.query(sql, [customerId, email], function (err, result) {
                         if (err) {
                             conn.end();
                             return reject(err);
                         } else {
-                            if(result.affectedRows > 0) {
+                            if (result.affectedRows > 0) {
                                 conn.end();
-                                return resolve({success:true});
+                                return resolve({ success: true });
                             }
                         }
                     });
@@ -579,8 +539,8 @@ console.log("Hash:", member.passwordHash);
             });
         });
     },
-    updateMemberDeliveryDetails: function (email,name,contactNum,address,postalCode) {
-        return new Promise( ( resolve, reject ) => {
+    updateMemberDeliveryDetails: function (email, name, contactNum, address, postalCode) {
+        return new Promise((resolve, reject) => {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
@@ -590,14 +550,14 @@ console.log("Hash:", member.passwordHash);
                 }
                 else {
                     var sql = 'UPDATE memberentity SET NAME=?, PHONE=?, ADDRESS=?, ZIPCODE=? WHERE EMAIL=?';
-                    conn.query(sql, [name,contactNum,address,postalCode,email], function (err, result) {
+                    conn.query(sql, [name, contactNum, address, postalCode, email], function (err, result) {
                         if (err) {
                             conn.end();
                             return reject(err);
                         } else {
-                            if(result.affectedRows > 0) {
+                            if (result.affectedRows > 0) {
                                 conn.end();
-                                return resolve({success:true});
+                                return resolve({ success: true });
                             }
                         }
                     });
@@ -608,8 +568,8 @@ console.log("Hash:", member.passwordHash);
 };
 module.exports = memberDB
 
-var generateRandomNumber = function(digits){
-    return crypto.randomBytes(Math.ceil(digits/2)).toString('hex');
+var generateRandomNumber = function (digits) {
+    return crypto.randomBytes(Math.ceil(digits / 2)).toString('hex');
 };
 
 var emailer = nodemailer.createTransport({
