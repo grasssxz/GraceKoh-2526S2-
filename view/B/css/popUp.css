@@ -1,0 +1,110 @@
+/* Overlay */
+.promo-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.promo-popup-overlay.hidden {
+  display: none;
+}
+
+/* Popup box */
+.promo-popup {
+  position: relative;
+  width: 70%;
+  max-width: 900px;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+/* Close button */
+.promo-close {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+
+  font-size: 42px;         
+  font-weight: 700;
+  line-height: 1;
+
+  width: 48px;              /*bigger click area */
+  height: 48px;
+  border-radius: 50%;
+
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 3;
+}
+
+.promo-close:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(1.05);
+}
+
+
+
+/* Image */
+.promo-popup-image {
+  width: 100%;
+  height: 400px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: #f5f5f5;
+}
+
+/* Content */
+.promo-popup-content {
+  padding: 30px;
+  text-align: center;
+}
+
+.promo-popup-title {
+  font-size: 36px;
+  font-weight: 800;
+  background: #c9302c;
+  color: white;
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.promo-popup-discount {
+  font-size: 48px;
+  font-weight: 900;
+  color: #ff6600;
+  margin-bottom: 25px;
+}
+
+.promo-popup-btn {
+  padding: 15px 40px;
+  font-size: 18px;
+  border-radius: 30px;
+  border: none;
+  background: #ff6600;
+  color: white;
+  cursor: pointer;
+}
+
+.promo-popup-btn:hover {
+  background: #e65c00;
+}

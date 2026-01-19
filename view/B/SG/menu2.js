@@ -34,7 +34,6 @@ document.write('\
                 <img alt="Island Furniture" width="180" height="80" data-sticky-width="82" data-sticky-height="40" src="../img/logo.png">\
             </a>\
         </h1>\
-        <!-- Non Logged In Menu-->\
         <div id="menuLoggedOut" style="display: none;">\
             <nav>\
                 <ul class="nav nav-pills nav-top">\
@@ -48,12 +47,8 @@ document.write('\
                         <a href="/B/' + countryPrefix + '/contactUs.html"><i class="icon icon-shopping-cart"></i>Contact Us</a>\
                     </li>\
                 </ul>\
-                <button class="btn btn-responsive-nav btn-inverse" data-toggle="collapse" data-target=".nav-main-collapse">\
-                    <i class="icon icon-bars"></i>\
-                </button>\
             </nav>\
         </div>\
-        <!-- Logged In Menu-->\
         <div id="menuLoggedIn" style="display: none;">\
             <nav>\
                 <ul class="nav nav-pills nav-top">\
@@ -74,9 +69,6 @@ document.write('\
                         <a href="#" onclick="logout()"><i class="icon icon-unlock-alt"></i>Logout</a>\
                     </li>\
                 </ul>\
-                <button class="btn btn-responsive-nav btn-inverse" data-toggle="collapse" data-target=".nav-main-collapse">\
-                    <i class="icon icon-bars"></i>\
-                </button>\
             </nav>\
         </div>\
     </div>\
@@ -87,10 +79,22 @@ document.write('\
                     <li>\
                         <a href="/B/' + countryPrefix + '/virtualStore.html">Virtual Store</a>\
                     </li>\
+                    <li>\
+                        <a href="/B/' + countryPrefix + '/promotions.html">View Promotions</a>\
+                    </li>\
+                    <li><a id="retailProductLink"><i class="icon icon-coffee"></i> Retail</a></li>\
                     <li class="dropdown">\
-                        <a class="dropdown-toggle" href="#">\
-                            All Departments<i class="icon icon-angle-down"></i>\
-                        </a>\
+                        <a class="dropdown-toggle" href="#">\ Show Room<i class="icon icon-angle-down"></i>\ </a>\
+                        <ul class="dropdown-menu">\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?room=BathRoom"><i class="icon icon-map-marker"></i> Bathroom</a></li>\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?room=bedRoom"><i class="icon icon-map-marker"></i> Bed Room</a></li>\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?room=StudyRoom"><i class="icon icon-map-marker"></i> Study Room</a></li>\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?room=ChildrenRoom"><i class="icon icon-map-marker"></i> Children Room</a></li>\
+                            <li><a href="/B/' + countryPrefix + '/showRoom.html?room=LivingRoom"><i class="icon icon-map-marker"></i> Living Room</a></li>\
+                        </ul>\
+                    </li>\
+                    <li class="dropdown">\
+                        <a class="dropdown-toggle" href="#">\ Furniture<i class="icon icon-angle-down"></i>\ </a>\
                         <ul class="dropdown-menu">\
                             <li><a id="tableDeskLink"><i class="icon icon-map-marker"></i> Tables & Desk</a></li>\
                             <li><a href="/B/' + countryPrefix + '/furnitureCategory.html?cat=Bathroom"><i class="icon icon-map-marker"></i> Bathroom</a></li>\
@@ -100,7 +104,6 @@ document.write('\
                             <li><a href="/B/' + countryPrefix + '/furnitureCategory.html?cat=Lightings"><i class="icon icon-map-marker"></i> Lightings</a></li>\
                             <li><a href="/B/' + countryPrefix + '/furnitureCategory.html?cat=Study"><i class="icon icon-map-marker"></i> Study</a></li>\
                             <li><a href="/B/' + countryPrefix + '/furnitureCategory.html?cat=Children"><i class="icon icon-map-marker"></i> Children</a></li>\
-                            <li><a id="retailProductLink"><i class="icon icon-coffee"></i> Retail Products</a></li>\
                         </ul>\
                     </li>\
                 </ul>\

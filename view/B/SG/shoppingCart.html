@@ -8,7 +8,7 @@
             var authToken = null;
             var countryPrefix = localStorage.getItem('urlPrefix');
             //get token from session
-            authToken = sessionStorage.getItem('token');
+            authToken = localStorage.getItem('token');
             if (authToken == null || authToken == "") {
                 window.location.href = '/B/' + countryPrefix + '/memberLogin.html';
             }
