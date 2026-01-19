@@ -29,14 +29,47 @@
 
         var member = null;
         document.addEventListener('DOMContentLoaded', function () {
-            member = JSON.parse(localStorage.getItem("member"));
 
-            if (member.sla == 1) {
-                document.getElementById("serviceLevelAgreement").checked = true;
+            const email = sessionStorage.getItem("memberEmail");
+
+            if (!email) {
+                alert("Session expired. Please log in again.");
+                window.location.href = '/B/' + countryPrefix + '/memberLogin.html';
+                return;
             }
 
-            //Get Bought Items
-            fetch(new Request('/api/getBoughtItem/' + member.id,
+            fetch(`/api/getMember?email=${encodeURIComponent(email)}`, {
+                headers: {
+                    Authorization: 'Bearer ' + authToken
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    member = data;
+                    localStorage.setItem("member", JSON.stringify(member));
+
+                    if (member.sla == 1) {
+                        document.getElementById("serviceLevelAgreement").checked = true;
+                    }
+
+                    // populate fields
+                    document.getElementById("name").value = member.name || "";
+                    document.getElementById("email").value = member.email || "";
+                    document.getElementById("phone").value = member.phone || "";
+                    document.getElementById("country").value = member.city || "";
+                    document.getElementById("address").value = member.address || "";
+                    document.getElementById("age").value = member.age || "";
+                    document.getElementById("income").value = member.income || "";
+
+                    loadSalesHistory(member.id);
+
+                })
+                .catch(err => {
+                    console.error("Failed to load member", err);
+                });
+
+            function loadSalesHistory(memberId) {
+            fetch(new Request('/api/getBoughtItem/' + memberId,
                 {
                     method: 'GET',
                     headers: {
@@ -169,7 +202,7 @@
                     }
                 }).catch(function (error) {
                     console.log(error);
-                });
+                })};
         }, false);
 
         function addWorkDays(startDate, days) {
