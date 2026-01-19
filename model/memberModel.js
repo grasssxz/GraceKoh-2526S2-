@@ -315,23 +315,52 @@ var memberDB = {
     },
     updateMemberProfile(details) {
         return new Promise((resolve, reject) => {
-            const sql = `
-      UPDATE memberentity
-      SET NAME=?, PHONE=?, CITY=?, ADDRESS=?, SECURITYQUESTION=?,
-          SECURITYANSWER=?, AGE=?, INCOME=?, SERVICELEVELAGREEMENT=?
-      WHERE EMAIL=?
-    `;
-            const args = [
-                details.name, details.phone, details.country,
-                details.address, details.securityQuestion,
-                details.securityAnswer, details.age,
-                details.income, details.sla, details.email
-            ];
-            db.query(sql, args, err =>
-                err ? reject(err) : resolve({ success: true })
-            );
+            const conn = db.getConnection();
+
+            conn.connect(err => {
+                if (err) {
+                    console.log(err);
+                    return reject(err);
+                }
+
+                const sql = `
+                UPDATE memberentity
+                SET NAME=?, PHONE=?, CITY=?, ADDRESS=?, SECURITYQUESTION=?,
+                    SECURITYANSWER=?, AGE=?, INCOME=?, SERVICELEVELAGREEMENT=?
+                WHERE EMAIL=?
+            `;
+
+                const args = [
+                    details.name,
+                    details.phone,
+                    details.country,
+                    details.address,
+                    details.securityQuestion,
+                    details.securityAnswer,
+                    details.age,
+                    details.income,
+                    details.sla,
+                    details.email
+                ];
+
+                conn.query(sql, args, (err, result) => {
+                    conn.end();
+
+                    if (err) {
+                        console.log("SQL ERROR:", err);
+                        return reject(err);
+                    }
+
+                    if (result.affectedRows === 0) {
+                        return reject(new Error("No rows updated"));
+                    }
+
+                    resolve({ success: true });
+                });
+            });
         });
     },
+
     sendPasswordResetCode: function (email, url) {
         return new Promise((resolve, reject) => {
             var conn = db.getConnection();
