@@ -1,13 +1,28 @@
 <script src="../checkCountry.js"></script>
 <html>
 <script src="../../header.js"></script>
+<head>
+<style>
+.header,
+.navbar,
+.menu {
+  z-index: 1;
+}
+.main {
+  z-index: 5;
+}
+</style>
 
+</head>
 <body>
     <script>
         var authToken = null;
         var countryPrefix = localStorage.getItem('urlPrefix');
         //get token from session
         authToken = localStorage.getItem('token');
+        //let member = JSON.parse(localStorage.getItem('member'));
+        const email = sessionStorage.getItem("memberEmail");
+
         if (authToken == null || authToken == "") {
             window.location.href = '/B/' + countryPrefix + '/memberLogin.html';
         }
@@ -27,12 +42,10 @@
                 console.log(error);
             });
 
-        var member = null;
-        document.addEventListener('DOMContentLoaded', function () {
 
-            const email = sessionStorage.getItem("memberEmail");
+        document.addEventListener("DOMContentLoaded", function () {
 
-            if (!email) {
+            if (!email || !authToken) {
                 alert("Session expired. Please log in again.");
                 window.location.href = '/B/' + countryPrefix + '/memberLogin.html';
                 return;
@@ -48,9 +61,10 @@
                     member = data;
                     localStorage.setItem("member", JSON.stringify(member));
 
-                    if (member.sla == 1) {
+                    if (member && member.sla == 1) {
                         document.getElementById("serviceLevelAgreement").checked = true;
                     }
+
 
                     // populate fields
                     document.getElementById("name").value = member.name || "";
@@ -62,65 +76,63 @@
                     document.getElementById("income").value = member.income || "";
 
                     loadSalesHistory(member.id);
-
                 })
                 .catch(err => {
                     console.error("Failed to load member", err);
                 });
-
             function loadSalesHistory(memberId) {
-            fetch(new Request('/api/getBoughtItem/' + memberId,
-                {
-                    method: 'GET',
-                    headers: {
-                        Authorization: 'Bearer ' + authToken
-                    }
-                })).then(function (response) {
-                    return response.json();
-                }).then(function (boughtItem) {
-                    if (boughtItem == null || boughtItem == '') { //if member do not have any bought items
-                        document.getElementById("salesHistoryTab").innerHTML = '<h5 class="center">You do not have any sales history.</h5>';
-                    }
-                    else {
-                        var htmlTxt = '';
-                        var orderIdList = [];
-                        var overallPrice = 0;
-                        var finalPrice = 0;
-                        //get all order IDs
-                        for (i = 0; i < boughtItem.length; i++) {
-                            orderIdList[i] = boughtItem[i].id;
+                fetch(new Request('/api/getBoughtItem/' + memberId,
+                    {
+                        method: 'GET',
+                        headers: {
+                            Authorization: 'Bearer ' + authToken
                         }
-                        //unduplicate order IDs
-                        orderIdList = [...new Set(orderIdList)];
-                        var temp;
-                        var size = orderIdList.length;
-                        //sort order ID in ascending order
-                        for (i = 0; i < size - 1; i++) {
-                            for (j = 0; j < size - i - 1; j++) {
-                                if (orderIdList[j] > orderIdList[j + 1]) {
-                                    temp = orderIdList[j];
-                                    orderIdList[j] = orderIdList[j + 1];
-                                    orderIdList[j + 1] = temp;
+                    })).then(function (response) {
+                        return response.json();
+                    }).then(function (boughtItem) {
+                        if (boughtItem == null || boughtItem == '') { //if member do not have any bought items
+                            document.getElementById("salesHistoryTab").innerHTML = '<h5 class="center">You do not have any sales history.</h5>';
+                        }
+                        else {
+                            var htmlTxt = '';
+                            var orderIdList = [];
+                            var overallPrice = 0;
+                            var finalPrice = 0;
+                            //get all order IDs
+                            for (i = 0; i < boughtItem.length; i++) {
+                                orderIdList[i] = boughtItem[i].id;
+                            }
+                            //unduplicate order IDs
+                            orderIdList = [...new Set(orderIdList)];
+                            var temp;
+                            var size = orderIdList.length;
+                            //sort order ID in ascending order
+                            for (i = 0; i < size - 1; i++) {
+                                for (j = 0; j < size - i - 1; j++) {
+                                    if (orderIdList[j] > orderIdList[j + 1]) {
+                                        temp = orderIdList[j];
+                                        orderIdList[j] = orderIdList[j + 1];
+                                        orderIdList[j + 1] = temp;
+                                    }
                                 }
                             }
-                        }
 
-                        htmlTxt += '<h5>Order #' + (1) + '</h5>';
-                        var counter = 0;
-                        //get bought items by order ID
-                        for (j = 0; j < boughtItem.length; j++) {
+                            htmlTxt += '<h5>Order #' + (1) + '</h5>';
+                            var counter = 0;
+                            //get bought items by order ID
+                            for (j = 0; j < boughtItem.length; j++) {
 
-                            if (boughtItem[j].id == orderIdList[0]) {
-                                var item = boughtItem[j];
-                                //display top level info
-                                if (counter == 0) {
-                                    let options = {
-                                        weekday: "long", year: "numeric", month: "long",
-                                        day: "numeric", hour: "2-digit", minute: "2-digit"
-                                    };
-                                    var datePurchased = (new Date(item.createddate)).toLocaleTimeString('en-us', options);
-                                    var deliveryDate = addWorkDays(new Date(item.createddate), 5);
-                                    htmlTxt += '\
+                                if (boughtItem[j].id == orderIdList[0]) {
+                                    var item = boughtItem[j];
+                                    //display top level info
+                                    if (counter == 0) {
+                                        let options = {
+                                            weekday: "long", year: "numeric", month: "long",
+                                            day: "numeric", hour: "2-digit", minute: "2-digit"
+                                        };
+                                        var datePurchased = (new Date(item.createddate)).toLocaleTimeString('en-us', options);
+                                        var deliveryDate = addWorkDays(new Date(item.createddate), 5);
+                                        htmlTxt += '\
                                             <h6>Date Purchased: ' + datePurchased + '</h6>\
                                             <h6>Estimated Delivery Date: ' + deliveryDate + '</h6>\
                                             <h6 style="text-decoration:underline; font-weight:bold">Delivery Details:</h6>\
@@ -128,12 +140,12 @@
                                             <h6>Postal Code: ' + item.postalCode + '</h6>\
                                             <h6>Name: ' + item.customerName + '</h6>\
                                             <h6>Contact Number: ' + item.phone + '</h6>';
-                                    counter++;
+                                        counter++;
+                                    }
                                 }
                             }
-                        }
-                        //display table info
-                        htmlTxt += '\
+                            //display table info
+                            htmlTxt += '\
                                 <div class="row">\
                                     <div class="col-md-12">\
                                         <div class="row featured-boxes">\
@@ -151,11 +163,11 @@
                                                                 </tr>\
                                                             </thead>\
                                                             <tbody>';
-                        for (y = 0; y < boughtItem.length; y++) {
+                            for (y = 0; y < boughtItem.length; y++) {
 
-                            if (boughtItem[y].id == orderIdList[0]) {
-                                var product = boughtItem[y];
-                                htmlTxt += '\
+                                if (boughtItem[y].id == orderIdList[0]) {
+                                    var product = boughtItem[y];
+                                    htmlTxt += '\
                                         <tr class="cart_table_item">\
                                             <td class="product-thumbnail">\
                                                 <a href="/B/' + countryPrefix + '/furnitureProductDetails.html?sku=' + product.sku + '"><img width="100" height="100" alt="" class="img-responsive" src="' + product.imageUrl + '"></a>\
@@ -173,11 +185,11 @@
                                                 $<span class="amount">' + product.retailPrice.toFixed(2) * product.quantity + '</span>\
                                             </td>\
                                         </tr>';
-                                finalPrice += product.retailPrice.toFixed(2) * product.quantity;
-                                overallPrice += product.retailPrice.toFixed(2) * product.quantity;
+                                    finalPrice += product.retailPrice.toFixed(2) * product.quantity;
+                                    overallPrice += product.retailPrice.toFixed(2) * product.quantity;
+                                }
                             }
-                        }
-                        htmlTxt += '\
+                            htmlTxt += '\
                                                                 <tr>\
                                                                     <td></td>\
                                                                     <td></td>\
@@ -195,14 +207,15 @@
                                         </div>\
                                     </div>\
                                 </div>';
-                        finalPrice = 0;
+                            finalPrice = 0;
 
-                        htmlTxt += '<h4 style="font-weight: bold; padding-left: 20px">Total Amount Spent: $' + overallPrice + '</h4>';
-                        document.getElementById("salesHistoryTab").innerHTML = htmlTxt;
-                    }
-                }).catch(function (error) {
-                    console.log(error);
-                })};
+                            htmlTxt += '<h4 style="font-weight: bold; padding-left: 20px">Total Amount Spent: $' + overallPrice + '</h4>';
+                            document.getElementById("salesHistoryTab").innerHTML = htmlTxt;
+                        }
+                    }).catch(function (error) {
+                        console.log(error);
+                    })
+            };
         }, false);
 
         function addWorkDays(startDate, days) {
@@ -223,7 +236,7 @@
             var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             return startDate.toLocaleDateString("en-US", options);
         }
-        async function submitForm() {
+        async function submitProfile() {
             if (!document.getElementById("profileForm").checkValidity()) return;
 
             const data = {
@@ -298,6 +311,28 @@
         function pdpaWindow() {
             var myWindow = window.open("pdpa.html");
         }
+
+        function resetProfile() {
+            const member = JSON.parse(localStorage.getItem("member"));
+            if (!member) return;
+
+            document.getElementById("name").value = member.name || "";
+            document.getElementById("phone").value = member.phone || "";
+            document.getElementById("country").value = member.city || "";
+            document.getElementById("address").value = member.address || "";
+            document.getElementById("securityQuestion").value = member.securityQuestion || "";
+            document.getElementById("securityAnswer").value = member.securityAnswer || "";
+            document.getElementById("age").value = member.age || "";
+            document.getElementById("income").value = member.income || "";
+            document.getElementById("serviceLevelAgreement").checked = member.sla == 1;
+        }
+
+        function resetPassword() {
+            document.getElementById("oldPassword").value = "";
+            document.getElementById("password").value = "";
+            document.getElementById("repassword").value = "";
+        }
+
     </script>
     <script src="menu2.js"></script>
     <div role="main" class="main">
@@ -646,9 +681,21 @@
                                     <div class="panel-footer" style="padding-bottom: 0px;">
                                         <div class="row">
                                             <div class="form-group">
-                                                <input type="submit" onclick="submitForm()" value="Submit"
-                                                    class="btn btn-primary" />
-                                                <input type="reset" value="Reset" class="btn btn-primary" />
+                                                <input type="button" value="Update Profile" class="btn btn-primary"
+                                                    onclick="submitProfile()" />
+
+                                                <input type="button" value="Reset Profile" class="btn btn-secondary"
+                                                    onclick="resetProfile()" />
+
+
+
+
+                                                <input type="button" value="Change Password" class="btn btn-warning"
+                                                    onclick="changePassword()" />
+
+                                                <input type="button" value="Clear Password" class="btn btn-secondary"
+                                                    onclick="resetPassword()" />
+
                                             </div>
                                         </div>
                                     </div>

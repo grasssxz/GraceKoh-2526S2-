@@ -315,23 +315,52 @@ var memberDB = {
     },
     updateMemberProfile(details) {
         return new Promise((resolve, reject) => {
-            const sql = `
-      UPDATE memberentity
-      SET NAME=?, PHONE=?, CITY=?, ADDRESS=?, SECURITYQUESTION=?,
-          SECURITYANSWER=?, AGE=?, INCOME=?, SERVICELEVELAGREEMENT=?
-      WHERE EMAIL=?
-    `;
-            const args = [
-                details.name, details.phone, details.country,
-                details.address, details.securityQuestion,
-                details.securityAnswer, details.age,
-                details.income, details.sla, details.email
-            ];
-            db.query(sql, args, err =>
-                err ? reject(err) : resolve({ success: true })
-            );
+            const conn = db.getConnection();
+
+            conn.connect(err => {
+                if (err) {
+                    console.log(err);
+                    return reject(err);
+                }
+
+                const sql = `
+                UPDATE memberentity
+                SET NAME=?, PHONE=?, CITY=?, ADDRESS=?, SECURITYQUESTION=?,
+                    SECURITYANSWER=?, AGE=?, INCOME=?, SERVICELEVELAGREEMENT=?
+                WHERE EMAIL=?
+            `;
+
+                const args = [
+                    details.name,
+                    details.phone,
+                    details.country,
+                    details.address,
+                    details.securityQuestion,
+                    details.securityAnswer,
+                    details.age,
+                    details.income,
+                    details.sla,
+                    details.email
+                ];
+
+                conn.query(sql, args, (err, result) => {
+                    conn.end();
+
+                    if (err) {
+                        console.log("SQL ERROR:", err);
+                        return reject(err);
+                    }
+
+                    if (result.affectedRows === 0) {
+                        return reject(new Error("No rows updated"));
+                    }
+
+                    resolve({ success: true });
+                });
+            });
         });
     },
+
     sendPasswordResetCode: function (email, url) {
         return new Promise((resolve, reject) => {
             var conn = db.getConnection();
@@ -467,52 +496,34 @@ var memberDB = {
             });
         });
     },
-    verifyPassword: function (id, password) {
-        return new Promise((resolve, reject) => {
-            var conn = db.getConnection();
-            conn.connect(function (err) {
+    verifyPassword: function (email, password) {
+    return new Promise((resolve, reject) => {
+        var conn = db.getConnection();
+        conn.connect(err => {
+            if (err) return reject(err);
+
+            const sql = 'SELECT PASSWORDHASH FROM memberentity WHERE EMAIL=?';
+            conn.query(sql, [email], (err, result) => {
                 if (err) {
-                    console.log(err);
                     conn.end();
                     return reject(err);
                 }
-                else {
-                    var sql = 'SELECT * FROM memberentity m WHERE m.ID=?';
-                    conn.query(sql, [id], (err, result) => {
-                        if (err) {
-                            conn.end();
-                            return reject(err);
-                        }
-                        else {
-                            if (result == null || result == undefined || result == '') {
-                                conn.end();
-                                return resolve({ success: false });
-                            }
-                            var member = new Member();
-                            member.email = result[0].EMAIL;
-                            member.passwordHash = result[0].PASSWORDHASH;
 
-                            bcrypt.compare(password, member.passwordHash, function (err, res) {
-                                if (res) {
-                                    console.log("Plain:", password);
-                                    console.log("Hash:", member.passwordHash);
-
-                                    conn.end();
-                                    return resolve({ success: true });
-                                } else {
-                                    console.log("Plain:", password);
-                                    console.log("Hash:", member.passwordHash);
-
-                                    conn.end();
-                                    return resolve({ success: false });
-                                }
-                            });
-                        }
-                    });
+                if (!result || result.length === 0) {
+                    conn.end();
+                    return resolve(false);
                 }
+
+                bcrypt.compare(password, result[0].PASSWORDHASH, (err, match) => {
+                    conn.end();
+                    if (err) return reject(err);
+                    resolve(match);
+                });
             });
         });
-    },
+    });
+}
+,
     updateMemberStripeCustomerId: function (email, customerId) {
         return new Promise((resolve, reject) => {
             var conn = db.getConnection();

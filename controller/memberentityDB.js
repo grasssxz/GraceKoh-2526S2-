@@ -207,17 +207,26 @@ app.put('/api/updateMemberProfile',
 });
 
 
-app.put('/api/updateMemberPassword',
+app.put(
+  '/api/updateMemberPassword',
   [middleware.checkToken, jsonParser],
   async (req, res) => {
-    const { email, oldPassword, password } = req.body;
+    try {
+      const { email, oldPassword, password } = req.body;
 
-    const valid = await member.verifyPassword(email, oldPassword);
-    if (!valid) return res.send({ success: false });
+      if (!email || !oldPassword || !password) {
+        return res.status(400).send({ success: false, error: "Missing fields" });
+      }
 
-    member.updateMemPasswordAndResetCode(email, password)
-      .then(() => res.send({ success: true }))
-      .catch(() => res.status(500).send("Failed to update password"));
+      const valid = await member.verifyPassword(email, oldPassword);
+      if (!valid) return res.send({ success: false });
+
+      await member.updateMemPasswordAndResetCode(email, password);
+      res.send({ success: true });
+
+    } catch (err) {
+      res.status(500).send("Failed to update password");
+    }
 });
 
 
