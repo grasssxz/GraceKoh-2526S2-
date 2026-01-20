@@ -223,7 +223,7 @@
             var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             return startDate.toLocaleDateString("en-US", options);
         }
-        async function submitForm() {
+        async function submitProfile() {
             if (!document.getElementById("profileForm").checkValidity()) return;
 
             const data = {
@@ -298,6 +298,28 @@
         function pdpaWindow() {
             var myWindow = window.open("pdpa.html");
         }
+
+        function resetProfile() {
+            const member = JSON.parse(localStorage.getItem("member"));
+            if (!member) return;
+
+            document.getElementById("name").value = member.name || "";
+            document.getElementById("phone").value = member.phone || "";
+            document.getElementById("country").value = member.city || "";
+            document.getElementById("address").value = member.address || "";
+            document.getElementById("securityQuestion").value = member.securityQuestion || "";
+            document.getElementById("securityAnswer").value = member.securityAnswer || "";
+            document.getElementById("age").value = member.age || "";
+            document.getElementById("income").value = member.income || "";
+            document.getElementById("serviceLevelAgreement").checked = member.sla == 1;
+        }
+
+        function resetPassword() {
+            document.getElementById("oldPassword").value = "";
+            document.getElementById("password").value = "";
+            document.getElementById("repassword").value = "";
+        }
+
     </script>
     <script src="menu2.js"></script>
     <div role="main" class="main">
@@ -646,9 +668,21 @@
                                     <div class="panel-footer" style="padding-bottom: 0px;">
                                         <div class="row">
                                             <div class="form-group">
-                                                <input type="submit" onclick="submitForm()" value="Submit"
-                                                    class="btn btn-primary" />
-                                                <input type="reset" value="Reset" class="btn btn-primary" />
+                                                <input type="button" value="Update Profile" class="btn btn-primary"
+                                                    onclick="submitProfile()" />
+
+                                                <input type="button" value="Reset Profile" class="btn btn-secondary"
+                                                    onclick="resetProfile()" />
+
+
+
+
+                                                <input type="button" value="Change Password" class="btn btn-warning"
+                                                    onclick="changePassword()" />
+
+                                                <input type="button" value="Clear Password" class="btn btn-secondary"
+                                                    onclick="resetPassword()" />
+
                                             </div>
                                         </div>
                                     </div>
