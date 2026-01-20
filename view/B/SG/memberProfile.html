@@ -1,14 +1,26 @@
 <script src="../checkCountry.js"></script>
 <html>
 <script src="../../header.js"></script>
+<head>
+<style>
+.header,
+.navbar,
+.menu {
+  z-index: 1;
+}
+.main {
+  z-index: 5;
+}
+</style>
 
+</head>
 <body>
     <script>
         var authToken = null;
         var countryPrefix = localStorage.getItem('urlPrefix');
         //get token from session
         authToken = localStorage.getItem('token');
-        let member = JSON.parse(localStorage.getItem('member'));
+        //let member = JSON.parse(localStorage.getItem('member'));
         const email = sessionStorage.getItem("memberEmail");
 
         if (authToken == null || authToken == "") {
@@ -49,9 +61,10 @@
                     member = data;
                     localStorage.setItem("member", JSON.stringify(member));
 
-                    if (member.sla == 1) {
+                    if (member && member.sla == 1) {
                         document.getElementById("serviceLevelAgreement").checked = true;
                     }
+
 
                     // populate fields
                     document.getElementById("name").value = member.name || "";
