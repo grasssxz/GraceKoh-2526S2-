@@ -6,6 +6,8 @@
         <script src="https://js.stripe.com/v3/"></script>
         <script>
             var authToken = null;
+            var countryId = localStorage.getItem('countryId'); // ✅ REQUIRED by backend
+            var selectedPromotionId = null;  
             var countryPrefix = localStorage.getItem('urlPrefix');
             //get token from session
             authToken = localStorage.getItem('token');
@@ -83,7 +85,7 @@
                             <td></td>\
                             <td></td>\
                             <td></td>\
-                            <td class="product-subtotal" style="font-weight: bold">Total:</td>\
+                            <td class="product-subtotal" style="font-weight: bold">SubTotal:</td>\
                             <td class="product-subtotal">\
                                 $<span class="amount" id="finalPrice" name="finalPrice">\
                                     ' + finalPrice + '.00\
@@ -91,6 +93,66 @@
                             </td>\
                         </tr>';
                     document.getElementById('cartBody').innerHTML = htmlTxt;
+                    
+
+fetch('/api/calculateCartPrice', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + authToken
+    },
+    body: JSON.stringify({
+        shoppingCart: shoppingCart,
+        countryId: countryId,
+        selectedPromotionId: selectedPromotionId
+        
+    })
+})
+.then(res => res.json())
+.then(data => {
+    if (!data.success) return;
+
+    finalPrice = data.finalAmount; 
+
+    // INSERT HERE — BEFORE rendering discount / total
+    if (data.promotions && data.promotions.length > 1 && !selectedPromotionId) {
+        showPromotionPopup(data.promotions);
+        console.log(data.promotions);
+
+
+        return; // ⛔ stop auto rendering
+    }
+
+    let discountRow = '';
+
+    if (data.discountAmount > 0) {
+        discountRow = `
+            <tr>
+                <td colspan="4"></td>
+                <td class="product-subtotal"><strong>Discount:</strong></td>
+                <td class="product-subtotal" style="color: green;">
+                    -$${data.discountAmount.toFixed(2)}
+                </td>
+            </tr>
+        `;
+    }
+
+    const finalTotalRow = `
+        <tr>
+            <td colspan="4"></td>
+            <td class="product-subtotal"><strong>Total:</strong></td>
+            <td class="product-subtotal">
+                $${data.finalAmount.toFixed(2)}
+            </td>
+        </tr>
+    `;
+
+    document.getElementById('cartBody')
+        .insertAdjacentHTML('beforeend', discountRow + finalTotalRow);
+});
+
+
+
                     document.getElementById('btmDiv').innerHTML = '<div align="left"><a href="#myModal" data-toggle="modal"><button id="btnRemove" class="btn btn-primary">Remove Item(s)</button></a></div>\
                         <div align="right"><a href="#checkoutModal" data-toggle="modal"><button id="btnCheckout" class="btn btn-primary btn-lg">Check Out</button></a></div>';
                 }
@@ -221,8 +283,13 @@
                         var paymentData = {
                             memberId: member.id,
                             email: memberEmail,
-                            price: finalPrice,
+
+                            price: finalPrice,              // UI only, backend recalculates
                             shoppingCart: shoppingCart,
+
+                            countryId: countryId,           // ✅ NEW (REQUIRED)
+                            selectedPromotionId: selectedPromotionId, // ✅ NEW
+
                             name: name,
                             phone: contactNum,
                             address: address,
@@ -282,6 +349,100 @@
                     window.location.href = '/B/' + countryPrefix + '/shoppingCart.html?goodMsg=Successfully removed!';
                 }
             }
+            function showPromotionPopup(promotions) {
+    let html = '<h4>Select a Promotion</h4>';
+
+    // find best value
+    const bestRate = Math.max(...promotions.map(p => p.DISCOUNTRATE));
+
+    promotions.forEach(p => {
+        html += `
+          <div style="margin-bottom:10px">
+            <input type="radio" name="promo" value="${p.ID}">
+            <strong>${p.DESCRIPTION}</strong>
+            <br/>
+            Discount: ${p.DISCOUNTRATE}%
+            ${p.DISCOUNTRATE === bestRate
+                ? '<span style="color:green"> (Best Value)</span>'
+                : ''}
+          </div>
+        `;
+    });
+
+    html += `<button class="btn btn-primary" onclick="confirmPromotion()">Confirm</button>`;
+
+    document.getElementById('promotionModalBody').innerHTML = html;
+    $('#promotionModal').modal('show');
+}
+
+function confirmPromotion() {
+    const selected = document.querySelector('input[name="promo"]:checked');
+
+    if (!selected) {
+        alert("Please select a promotion");
+        return;
+    }
+
+    selectedPromotionId = Number(selected.value);
+
+
+    $('#promotionModal').modal('hide');
+
+    // Recalculate with chosen promo
+    fetch('/api/calculateCartPrice', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + authToken
+        },
+        body: JSON.stringify({
+            shoppingCart,
+            countryId,
+            selectedPromotionId
+        })
+    })
+    .then(res => res.json())
+   .then(data => {
+    if (!data.success) return;
+
+    finalPrice = data.finalAmount;
+
+    // 🔥 REMOVE OLD DISCOUNT & TOTAL ROWS
+    document.querySelectorAll('.promo-row').forEach(row => row.remove());
+
+    let discountRow = '';
+
+    if (data.discountAmount > 0) {
+        discountRow = `
+            <tr class="promo-row">
+                <td colspan="4"></td>
+                <td class="product-subtotal"><strong>Discount:</strong></td>
+                <td class="product-subtotal" style="color: green;">
+                    -$${data.discountAmount.toFixed(2)}
+                </td>
+            </tr>
+        `;
+    }
+
+    const totalRow = `
+        <tr class="promo-row">
+            <td colspan="4"></td>
+            <td class="product-subtotal"><strong>Total:</strong></td>
+            <td class="product-subtotal">
+                $${data.finalAmount.toFixed(2)}
+            </td>
+        </tr>
+    `;
+
+    document
+        .getElementById('cartBody')
+        .insertAdjacentHTML('beforeend', discountRow + totalRow);
+});
+
+
+
+}
+
 
             function checkAll(source) {
                 checkboxes = document.getElementsByName('delete');
@@ -712,9 +873,8 @@
                                                             <th class="product-quantity">
                                                                 Quantity
                                                             </th>
-                                                            <th class="product-subtotal" style="width: 15%">
-                                                                Subtotal
-                                                            </th>
+                                                            <td class="product-subtotal" style="font-weight: bold">Subtotal</td>
+
                                                         </tr>
                                                     </thead>
                                                     <tbody id="cartBody"></tbody>
@@ -828,6 +988,17 @@
                         </div>
                     </div>
                 </div>
+                <div class="modal fade" id="promotionModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Multiple Promotions Available</h4>
+      </div>
+      <div class="modal-body" id="promotionModalBody"></div>
+    </div>
+  </div>
+</div>
+
             <style>
                 .paymentSection {
                     background-color: #fafafa;
