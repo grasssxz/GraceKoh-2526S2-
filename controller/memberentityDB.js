@@ -26,6 +26,22 @@ app.get('/api/getMember', function (req, res) {
             res.status(500).send("Failed to get member");
         });
 });
+app.get('/api/getProfile', middleware.checkToken, function (req, res) {
+    // 🔐 email MUST come from decoded JWT, not query params
+    const email = req.decoded.email; // or req.user.email depending on middleware
+
+    member.getMember(email)
+        .then(result => {
+            res.send({
+                success: true,
+                member: result
+            });
+        })
+        .catch(err => {
+            console.error(err);
+            res.status(500).send({ success: false });
+        });
+});
 
 app.get('/api/getBoughtItem/:id', middleware.checkToken, function (req, res) {
     var id = req.params.id;

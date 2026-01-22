@@ -42,11 +42,15 @@ var memberDB = {
                         bcrypt.compare(password, member.passwordHash, function (err, isMatch) {
 
                             if (isMatch) {
-                                var token = jwt.sign(
-                                    { username: member.email },
-                                    config.secret,
-                                    { expiresIn: '12h' }
-                                );
+                               var token = jwt.sign(
+                            {
+                                email: member.email,   // 🔑 REQUIRED
+                                username: member.email // optional, keep if other code uses it
+                            },
+                            config.secret,
+                            { expiresIn: '12h' }
+                            );
+
 
                                 conn.end();
                                 return resolve({ success: true, email: member.email, token });
