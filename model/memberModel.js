@@ -35,6 +35,7 @@ var memberDB = {
 
                         var member = new Member();
                         member.email = result[0].EMAIL;
+                        member.id = result[0].ID;
                         member.passwordHash = result[0].PASSWORDHASH;
 
 
@@ -49,7 +50,7 @@ var memberDB = {
                                 );
 
                                 conn.end();
-                                return resolve({ success: true, email: member.email, token });
+                                return resolve({ success: true, email: member.email, id: member.id, token });
                             } else {
                                 conn.end();
                                 return resolve({ success: false });
