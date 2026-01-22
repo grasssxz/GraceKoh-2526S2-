@@ -34,6 +34,8 @@
 
                             sessionStorage.setItem("memberName", data.email); 
 
+                            sessionStorage.setItem("memberId", data.id)
+
                             //2. Save JWT for protected APIs
                             localStorage.setItem("token", data.token);
 
