@@ -1,26 +1,22 @@
 var db = require('./databaseConfig.js');
 
 var salesRecordDB = {
+
+    /* ======================================================
+       CREATE SALES RECORD (USED BY payment.js)
+    ====================================================== */
     insertSalesRecord: function (data) {
         return new Promise((resolve, reject) => {
-            var conn = db.getConnection();
-            conn.connect(function (err) {
+            const conn = db.getConnection();
+
+            conn.connect(err => {
                 if (err) {
-                    console.log(err);
+                    console.error("DB connection error:", err);
                     conn.end();
                     return reject(err);
                 }
 
-                /*
-                  data should contain:
-                  - subtotal
-                  - price (final price after discount)
-                  - promotionId (nullable)
-                  - promotionDiscount
-                  - memberId
-                */
-
-                var sql = `
+                const sql = `
                     INSERT INTO salesrecordentity
                     (
                         AMOUNTDUE,
@@ -34,33 +30,74 @@ var salesRecordDB = {
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 `;
 
-                var sqlArgs = [
-                    data.subtotal,                 // original total
-                    data.price,                    // final payable amount
-                    data.promotionDiscount || 0,   // discount amount
-                    data.promotionId || null,      // promotion used
+                const sqlArgs = [
+                    data.subtotal || data.price,   // fallback safety
+                    data.price,
+                    data.promotionDiscount || 0,
+                    data.promotionId || null,
                     new Date(),
                     'SGD',
                     data.memberId
                 ];
 
-                conn.query(sql, sqlArgs, function (err, result) {
+                conn.query(sql, sqlArgs, (err, result) => {
                     conn.end();
 
                     if (err) {
-                        console.log(err);
+                        console.error("Insert sales record failed:", err);
                         return reject(err);
                     }
 
-                    if (result.affectedRows > 0) {
-                        return resolve({
-                            success: true,
-                            generatedId: result.insertId
-                        });
-                    }
-
-                    return resolve({ success: false });
+                    resolve({
+                        success: result.affectedRows > 0,
+                        generatedId: result.insertId
+                    });
                 });
+            });
+        });
+    },
+
+    /* ======================================================
+       GET SALES HISTORY BY MEMBER (NEW)
+    ====================================================== */
+    getSalesHistoryByMember: function (memberId) {
+        return new Promise((resolve, reject) => {
+            const conn = db.getConnection();
+
+            const sql = `
+                SELECT
+                    sr.ID AS orderId,
+                    sr.CREATEDDATE,
+                    sr.AMOUNTPAID,
+                    sr.PROMOTION_DISCOUNT_AMOUNT,
+
+                    i.NAME AS itemName,
+                    i.SKU,
+                    i.IMAGEURL,
+                    li.QUANTITY,
+                    i.UNITPRICE
+
+                FROM salesrecordentity sr
+                JOIN salesrecord_lineitementity srli
+                    ON sr.ID = srli.SALESRECORD_ID
+                JOIN lineitementity li
+                    ON srli.LINEITEM_ID = li.ID
+                JOIN itementity i
+                    ON li.ITEM_ID = i.ID
+
+                WHERE sr.MEMBER_ID = ?
+                ORDER BY sr.CREATEDDATE DESC
+            `;
+
+            conn.query(sql, [memberId], (err, rows) => {
+                conn.end();
+
+                if (err) {
+                    console.error("Get sales history failed:", err);
+                    return reject(err);
+                }
+
+                resolve(rows);
             });
         });
     }

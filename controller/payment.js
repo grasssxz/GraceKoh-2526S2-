@@ -1,3 +1,5 @@
+var db = require('../model/databaseConfig');
+
 var express = require('express');
 var app = express();
 app.use(express.json());  
@@ -9,6 +11,7 @@ var deliveryDetails = require('../model/deliveryDetailsModel.js');
 var stripe = require("stripe")("sk_test_fHytNQpl6Bjt3Yo4ppWGgpU6");
 var promotionModel = require('../model/promotionModel'); // ✅ NEW
 let middleware = require('./middleware');
+
 
 var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json({
@@ -76,6 +79,11 @@ async function calculateFinalPrice(cart, countryId, selectedPromotionId) {
     };
 }
 
+app.get('/api/getSalesHistory', middleware.checkToken, (req, res) => {
+    salesRecord.getSalesHistoryByMember(req.user.id)
+        .then(rows => res.send(rows))
+        .catch(() => res.status(500).send("Failed to load sales history"));
+});
 
 app.post('/api/calculateCartPrice',
   [middleware.checkToken, jsonParser],
@@ -154,14 +162,26 @@ console.log("🧾 isArray:", Array.isArray(req.body.shoppingCart));
             source: req.body.token.id
         });
 
-        const data = {
-            memberId: req.body.memberId,
-            email: req.body.email,
-            price: pricing.finalAmount,
-            promotionId: pricing.appliedPromotionId,
-            promotionDiscount: pricing.discountAmount,
-            shoppingCart: req.body.shoppingCart
-        };
+       const data = {
+    memberId: req.body.memberId,
+    email: req.body.email,
+
+    subtotal: pricing.subtotal,
+    price: pricing.finalAmount,
+
+    promotionId: pricing.appliedPromotionId,
+    promotionDiscount: pricing.discountAmount,
+
+    shoppingCart: req.body.shoppingCart,
+
+    // ✅ ADD DELIVERY INFO (THIS WAS MISSING)
+    name: req.body.name,
+    phone: req.body.phone,
+    address: req.body.address,
+    postalCode: req.body.postalCode
+};
+
+
 
         insertDbRecords(data, res);
     } catch (err) {
@@ -197,11 +217,22 @@ app.post('/api/processPaymentExistingCard', [middleware.checkToken, jsonParser],
         const data = {
             memberId: req.body.memberId,
             email: req.body.email,
+
+            subtotal: pricing.subtotal,
             price: pricing.finalAmount,
+
             promotionId: pricing.appliedPromotionId,
             promotionDiscount: pricing.discountAmount,
-            shoppingCart: req.body.shoppingCart
-        };
+
+            shoppingCart: req.body.shoppingCart,
+
+            // delivery info
+            name: req.body.name,
+            phone: req.body.phone,
+            address: req.body.address,
+            postalCode: req.body.postalCode
+            };
+
 
         insertDbRecords(data, res);
     } catch (err) {
@@ -248,7 +279,165 @@ module.exports = app;
    INSERT SALES RECORD (UNCHANGED INTERFACE)
 ====================================================== */
 function insertDbRecords(data, res) {
-    salesRecord.insertSalesRecord(data)
-        .then(result => res.send({ success: true, generatedId: result.generatedId }))
-        .catch(() => res.status(500).send("Failed to insert sales record"));
+    console.log("🚀 insertDbRecords START");
+    console.log("🧾 Incoming data:", data);
+
+    const cart = data.shoppingCart;
+    const ECOMMERCE_STORE_ID = 10001;
+    const conn = db.getConnection();
+
+    conn.connect(async err => {
+        if (err) {
+            console.error("❌ DB connection failed:", err);
+            return res.status(500).send({ success: false });
+        }
+
+        try {
+            /* =====================================================
+               1️⃣ INSERT SALES RECORD (FINAL PRICE IS STORED HERE)
+            ===================================================== */
+            console.log("🧾 Inserting sales record...");
+            console.log("💰 Subtotal:", data.subtotal);
+            console.log("🏷 Promotion ID:", data.promotionId);
+            console.log("💸 Discount:", data.promotionDiscount);
+            console.log("✅ Final Amount Paid:", data.price);
+
+            const salesResult = await salesRecord.insertSalesRecord({
+                memberId: data.memberId,
+                subtotal: data.subtotal,
+                price: data.price, // ✅ FINAL AMOUNT
+                promotionId: data.promotionId,
+                promotionDiscount: data.promotionDiscount
+            });
+
+            const salesRecordId = salesResult.generatedId;
+            console.log("✅ Sales record inserted. ID =", salesRecordId);
+
+            /* =====================================================
+               2️⃣ PROCESS CART ITEMS
+            ===================================================== */
+            for (const item of cart) {
+                console.log(
+                    `📦 Processing item → ITEM_ID=${item.id}, SKU=${item.sku}, QTY=${item.quantity}`
+                );
+
+                /* 2a️⃣ INSERT LINE ITEM */
+                const insertLineItemSql = `
+                    INSERT INTO lineitementity (ITEM_ID, QUANTITY)
+                    VALUES (?, ?)
+                `;
+
+                const lineItemResult = await new Promise((resolve, reject) => {
+                    conn.query(
+                        insertLineItemSql,
+                        [item.id, item.quantity],
+                        (err, result) => {
+                            if (err) return reject(err);
+                            resolve(result);
+                        }
+                    );
+                });
+
+                const lineItemId = lineItemResult.insertId;
+                console.log("✅ Line item inserted. LINEITEM_ID =", lineItemId);
+
+                /* 2b️⃣ LINK SALE ↔ LINE ITEM */
+                const linkSql = `
+                    INSERT INTO salesrecordentity_lineitementity
+                    (SalesRecordEntity_ID, itemsPurchased_ID)
+                    VALUES (?, ?)
+                `;
+
+                await new Promise((resolve, reject) => {
+                    conn.query(linkSql, [salesRecordId, lineItemId], err => {
+                        if (err) return reject(err);
+                        resolve();
+                    });
+                });
+
+                console.log(`🔗 Linked SALE ${salesRecordId} → LINEITEM ${lineItemId}`);
+
+                /* 2c️⃣ DEDUCT STOCK */
+                const stockSql = `
+                    UPDATE store_itementity
+                    SET SAFESTOCK = SAFESTOCK - ?
+                    WHERE ITEM_ID = ?
+                    AND STORE_ID = ?
+                `;
+
+                const stockResult = await new Promise((resolve, reject) => {
+                    conn.query(
+                        stockSql,
+                        [item.quantity, item.id, ECOMMERCE_STORE_ID],
+                        (err, result) => {
+                            if (err) return reject(err);
+                            resolve(result);
+                        }
+                    );
+                });
+
+                console.log(
+                    `📉 Stock updated → ITEM_ID=${item.id}, rows=${stockResult.affectedRows}`
+                );
+            }
+
+            /* =====================================================
+               3️⃣ INSERT DELIVERY DETAILS (NO MORE NULLS)
+            ===================================================== */
+            console.log("🚚 Inserting delivery details...");
+
+            console.log("📮 Address:", data.address);
+            console.log("📮 Postal:", data.postalCode);
+            console.log("📞 Phone:", data.phone);
+            console.log("👤 Name:", data.name);
+
+            const deliverySql = `
+                INSERT INTO deliverydetailsentity
+                (MEMBER_ID, DELIVERY_ADDRESS, POSTAL_CODE, CONTACT, NAME, SALERECORD_ID)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `;
+
+            await new Promise((resolve, reject) => {
+                conn.query(
+                    deliverySql,
+                    [
+                        data.memberId,
+                        data.address || null,
+                        data.postalCode || null, // ✅ IMPORTANT
+                        data.phone || null,
+                        data.name || null,
+                        salesRecordId
+                    ],
+                    err => {
+                        if (err) return reject(err);
+                        resolve();
+                    }
+                );
+            });
+
+
+            console.log("✅ Delivery details saved");
+
+            conn.end();
+            console.log("🎉 CHECKOUT FULLY COMPLETED");
+
+            res.send({
+                success: true,
+                salesRecordId
+            });
+
+        } catch (err) {
+            conn.end();
+            console.error("❌ insertDbRecords FAILED:", err);
+            res.status(500).send({ success: false });
+        }
+    });
 }
+
+
+
+
+
+
+
+
