@@ -144,11 +144,9 @@ app.get('/api/getStripeCustomer', middleware.checkToken, function (req, res) {
    PAYMENT — NEW CARD (UPDATED)
 ====================================================== */
 app.post('/api/processPaymentNewCard', [middleware.checkToken, jsonParser], async function (req, res) {
-    console.log("🧾 RAW req.body:", req.body);
-    console.log("🧾 headers:", req.headers['content-type']);
+ 
     try {
-        console.log("🧾 shoppingCart:", req.body.shoppingCart);
-console.log("🧾 isArray:", Array.isArray(req.body.shoppingCart));
+       
         const pricing = await calculateFinalPrice(
             req.body.shoppingCart,
             req.body.countryId,
@@ -163,29 +161,29 @@ console.log("🧾 isArray:", Array.isArray(req.body.shoppingCart));
         });
 
        const data = {
-    memberId: req.body.memberId,
-    email: req.body.email,
+                memberId: req.body.memberId,
+                email: req.body.email,
 
-    subtotal: pricing.subtotal,
-    price: pricing.finalAmount,
+                subtotal: pricing.subtotal,
+                price: pricing.finalAmount,
 
-    promotionId: pricing.appliedPromotionId,
-    promotionDiscount: pricing.discountAmount,
+                promotionId: pricing.appliedPromotionId,
+                promotionDiscount: pricing.discountAmount,
 
-    shoppingCart: req.body.shoppingCart,
+                shoppingCart: req.body.shoppingCart,
 
-    // ✅ ADD DELIVERY INFO (THIS WAS MISSING)
-    name: req.body.name,
-    phone: req.body.phone,
-    address: req.body.address,
-    postalCode: req.body.postalCode
+                
+                name: req.body.name,
+                phone: req.body.phone,
+                address: req.body.address,
+                postalCode: req.body.postalCode
 };
 
 
 
         insertDbRecords(data, res);
     } catch (err) {
-        console.error("❌ Payment error:", err);
+        console.error(" Payment error:", err);
 
     res.status(500).send({
         success: false,
@@ -279,8 +277,7 @@ module.exports = app;
    INSERT SALES RECORD (UNCHANGED INTERFACE)
 ====================================================== */
 function insertDbRecords(data, res) {
-    console.log("🚀 insertDbRecords START");
-    console.log("🧾 Incoming data:", data);
+    
 
     const cart = data.shoppingCart;
     const ECOMMERCE_STORE_ID = 10001;
@@ -288,40 +285,31 @@ function insertDbRecords(data, res) {
 
     conn.connect(async err => {
         if (err) {
-            console.error("❌ DB connection failed:", err);
+            console.error(" DB connection failed:", err);
             return res.status(500).send({ success: false });
         }
 
         try {
-            /* =====================================================
-               1️⃣ INSERT SALES RECORD (FINAL PRICE IS STORED HERE)
-            ===================================================== */
-            console.log("🧾 Inserting sales record...");
-            console.log("💰 Subtotal:", data.subtotal);
-            console.log("🏷 Promotion ID:", data.promotionId);
-            console.log("💸 Discount:", data.promotionDiscount);
-            console.log("✅ Final Amount Paid:", data.price);
+            
 
             const salesResult = await salesRecord.insertSalesRecord({
                 memberId: data.memberId,
                 subtotal: data.subtotal,
-                price: data.price, // ✅ FINAL AMOUNT
+                price: data.price, 
                 promotionId: data.promotionId,
                 promotionDiscount: data.promotionDiscount
             });
 
             const salesRecordId = salesResult.generatedId;
-            console.log("✅ Sales record inserted. ID =", salesRecordId);
+           
 
             /* =====================================================
-               2️⃣ PROCESS CART ITEMS
+                PROCESS CART ITEMS
             ===================================================== */
             for (const item of cart) {
-                console.log(
-                    `📦 Processing item → ITEM_ID=${item.id}, SKU=${item.sku}, QTY=${item.quantity}`
-                );
+                
 
-                /* 2a️⃣ INSERT LINE ITEM */
+                /*  INSERT LINE ITEM */
                 const insertLineItemSql = `
                     INSERT INTO lineitementity (ITEM_ID, QUANTITY)
                     VALUES (?, ?)
@@ -339,7 +327,7 @@ function insertDbRecords(data, res) {
                 });
 
                 const lineItemId = lineItemResult.insertId;
-                console.log("✅ Line item inserted. LINEITEM_ID =", lineItemId);
+                
 
                 /* 2b️⃣ LINK SALE ↔ LINE ITEM */
                 const linkSql = `
@@ -355,7 +343,7 @@ function insertDbRecords(data, res) {
                     });
                 });
 
-                console.log(`🔗 Linked SALE ${salesRecordId} → LINEITEM ${lineItemId}`);
+               
 
                 /* 2c️⃣ DEDUCT STOCK */
                 const stockSql = `
@@ -376,20 +364,9 @@ function insertDbRecords(data, res) {
                     );
                 });
 
-                console.log(
-                    `📉 Stock updated → ITEM_ID=${item.id}, rows=${stockResult.affectedRows}`
-                );
             }
 
-            /* =====================================================
-               3️⃣ INSERT DELIVERY DETAILS (NO MORE NULLS)
-            ===================================================== */
-            console.log("🚚 Inserting delivery details...");
-
-            console.log("📮 Address:", data.address);
-            console.log("📮 Postal:", data.postalCode);
-            console.log("📞 Phone:", data.phone);
-            console.log("👤 Name:", data.name);
+          
 
             const deliverySql = `
                 INSERT INTO deliverydetailsentity
@@ -403,7 +380,7 @@ function insertDbRecords(data, res) {
                     [
                         data.memberId,
                         data.address || null,
-                        data.postalCode || null, // ✅ IMPORTANT
+                        data.postalCode || null, 
                         data.phone || null,
                         data.name || null,
                         salesRecordId
@@ -416,10 +393,10 @@ function insertDbRecords(data, res) {
             });
 
 
-            console.log("✅ Delivery details saved");
+            
 
             conn.end();
-            console.log("🎉 CHECKOUT FULLY COMPLETED");
+            
 
             res.send({
                 success: true,
@@ -428,7 +405,7 @@ function insertDbRecords(data, res) {
 
         } catch (err) {
             conn.end();
-            console.error("❌ insertDbRecords FAILED:", err);
+            console.error(" insertDbRecords FAILED:", err);
             res.status(500).send({ success: false });
         }
     });
