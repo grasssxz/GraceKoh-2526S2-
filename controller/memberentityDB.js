@@ -26,22 +26,6 @@ app.get('/api/getMember', function (req, res) {
             res.status(500).send("Failed to get member");
         });
 });
-app.get('/api/getProfile', middleware.checkToken, function (req, res) {
-    // 🔐 email MUST come from decoded JWT, not query params
-    const email = req.decoded.email; // or req.user.email depending on middleware
-
-    member.getMember(email)
-        .then(result => {
-            res.send({
-                success: true,
-                member: result
-            });
-        })
-        .catch(err => {
-            console.error(err);
-            res.status(500).send({ success: false });
-        });
-});
 
 app.get('/api/getBoughtItem/:id', middleware.checkToken, function (req, res) {
     var id = req.params.id;
@@ -94,24 +78,17 @@ app.get('/api/getPasswordResetCode', function (req, res) {
 var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json({ extended: false });
 app.post('/api/loginMember', jsonParser, function (req, res) {
-      console.log("LOGIN ROUTE HIT");
-
     var email = req.body.email;
     var password = req.body.password;
-
-    console.log("/api/loginMember hit:", email);
-
     member.checkMemberLogin(email, password)
         .then((result) => {
-            console.log("Sending login result:", result);
-            res.json(result); 
+            res.send(result);
         })
         .catch((err) => {
-            console.log(" Login error:", err);
-            res.status(500).json({ success: false, error: "Server error" });
+            console.log(err);
+            res.status(500).send("Failed to check member login");
         });
 });
-
 
 var request = require('request');
 app.post('/api/registerMember', jsonParser, function (req, res) {
@@ -213,38 +190,38 @@ app.put('/api/activateMemberAccount', jsonParser, function (req, res) {
     }
 });
 
-app.put('/api/updateMemberProfile',
-  [middleware.checkToken, jsonParser],
-  (req, res) => {
-    member.updateMemberProfile(req.body)
-      .then(() => member.getMember(req.body.email))
-      .then(result => res.send(result))
-      .catch(() => res.status(500).send("Failed to update profile"));
+app.put('/api/updateMember', [middleware.checkToken, jsonParser], function (req, res) {
+    member.updateMember(req.body)
+        .then((result) => {
+            if(result.success) {
+                member.getMember(req.body.email)
+                    .then((result) => {
+                        res.send(result);
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                        res.status(500).send("Failed to get member");
+                    });
+            }
+        })
+        .catch((err) => {
+            console.log(err);
+            res.status(500).send("Failed to update member");
+        });
 });
 
-
-app.put(
-  '/api/updateMemberPassword',
-  [middleware.checkToken, jsonParser],
-  async (req, res) => {
-    try {
-      const { email, oldPassword, password } = req.body;
-
-      if (!email || !oldPassword || !password) {
-        return res.status(400).send({ success: false, error: "Missing fields" });
-      }
-
-      const valid = await member.verifyPassword(email, oldPassword);
-      if (!valid) return res.send({ success: false });
-
-      await member.updateMemPasswordAndResetCode(email, password);
-      res.send({ success: true });
-
-    } catch (err) {
-      res.status(500).send("Failed to update password");
-    }
+app.put('/api/updateMemberPassword', jsonParser, function (req, res) {
+    var email = req.body.email;
+    var password = req.body.password;
+    member.updateMemPasswordAndResetCode(email,password)
+        .then((result) => {
+            res.send(result);
+        })
+        .catch((err) => {
+            console.log(err);
+            res.status(500).send("Failed to update member password");
+        });
 });
-
 
 app.put('/api/updateMemberDeliveryDetails', [middleware.checkToken, jsonParser], function (req, res) {
     var email = req.body.email;

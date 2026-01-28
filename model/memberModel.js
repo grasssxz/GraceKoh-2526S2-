@@ -6,6 +6,15 @@ var bcrypt = require('bcrypt');
 var nodemailer = require('nodemailer');
 let jwt = require('jsonwebtoken');
 let config = require('./config');
+
+const emailer = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'huangmingjuan0320@gmail.com',
+        pass: 'kdixbvcwotyihhwr'
+    }
+});
+
 var memberDB = {
     checkMemberLogin: function (email, password) {
         return new Promise((resolve, reject) => {
@@ -18,50 +27,37 @@ var memberDB = {
                 }
                 else {
                     var sql = 'SELECT * FROM memberentity m WHERE m.EMAIL=?';
-
                     conn.query(sql, [email], (err, result) => {
                         if (err) {
-                            console.log("SQL error:", err);
                             conn.end();
                             return reject(err);
                         }
-
-                        //console.log("📦 SQL result:", result);
-
-                        if (!result || result.length === 0) {
-                            conn.end();
-                            return resolve({ success: false });
-                        }
-
-                        var member = new Member();
-                        member.email = result[0].EMAIL;
-                        member.id = result[0].ID;
-                        member.passwordHash = result[0].PASSWORDHASH;
-
-
-
-                        bcrypt.compare(password, member.passwordHash, function (err, isMatch) {
-
-                            if (isMatch) {
-                               var token = jwt.sign(
-                            {
-                                email: member.email,   // 🔑 REQUIRED
-                                username: member.email // optional, keep if other code uses it
-                            },
-                            config.secret,
-                            { expiresIn: '12h' }
-                            );
-
-
-                                conn.end();
-                                return resolve({ success: true, email: member.email, id: member.id, token });
-                            } else {
+                        else {
+                            if (result == null || result == undefined || result == '') {
                                 conn.end();
                                 return resolve({ success: false });
                             }
-                        });
-                    });
+                            var member = new Member();
+                            member.email = result[0].EMAIL;
+                            member.passwordHash = result[0].PASSWORDHASH;
 
+                            bcrypt.compare(password, member.passwordHash, function (err, res) {
+                                if (res) {
+                                    var token = jwt.sign({ username: member.email },
+                                        config.secret,
+                                        {
+                                            expiresIn: '12h'
+                                        }
+                                    );
+                                    conn.end();
+                                    return resolve({ success: true, email: member.email, token: token });
+                                } else {
+                                    conn.end();
+                                    return resolve({ success: false });
+                                }
+                            });
+                        }
+                    });
                 }
             });
         });
@@ -264,43 +260,63 @@ var memberDB = {
             var conn = db.getConnection();
             conn.connect(function (err) {
                 if (err) {
-                    console.log(err);
                     conn.end();
                     return reject(err);
                 }
-                else {
-                    bcrypt.hash(password, 5, function (err, hash) {
-                        var activationCode = generateRandomNumber(40);
-                        var passwordReset = generateRandomNumber(40);
-                        var sqlArgs = [activationCode, email, new Date(), hash, passwordReset];
-                        var sql = 'INSERT INTO memberentity(ACTIVATIONCODE,EMAIL,JOINDATE,PASSWORDHASH,PASSWORDRESET,LOYALTYTIER_ID)'
-                            + 'values(?,?,?,?,?,15)';
-                        conn.query(sql, sqlArgs, function (err, result) {
-                            if (err) {
-                                conn.end();
-                                return reject(err);
-                            } else {
-                                if (result.affectedRows > 0) {
-                                    var mailOptions = {
-                                        from: 'islandfurnituresep@gmail.com',
-                                        to: email,
-                                        subject: 'Island Furniture Member Account Activation',
-                                        text: 'Greetings from Island Furniture... \n\n'
-                                            + 'Click on the link below to activate your Island Furniture account: \n\n'
-                                            + 'http://' + hostName + '/activateMemberAccount.html?email=' + email + '&activateCode=' + activationCode
-                                    };
-                                    emailer.sendMail(mailOptions, function (error, info) {
-                                        if (error) {
-                                            console.log(error);
-                                        }
+
+                bcrypt.hash(password, 5, function (err, hash) {
+                    if (err) {
+                        conn.end();
+                        return reject(err);
+                    }
+
+                    var activationCode = generateRandomNumber(40);
+                    var passwordReset = generateRandomNumber(40);
+
+                    var sql =
+                        'INSERT INTO memberentity(ACTIVATIONCODE,EMAIL,JOINDATE,PASSWORDHASH,PASSWORDRESET,LOYALTYTIER_ID) ' +
+                        'VALUES (?,?,?,?,?,15)';
+                    var sqlArgs = [activationCode, email, new Date(), hash, passwordReset];
+
+                    conn.query(sql, sqlArgs, function (err, result) {
+                        if (err) {
+                            conn.end();
+                            return reject(err);
+                        }
+
+                        if (result.affectedRows > 0) {
+                            var mailOptions = {
+                                from: 'huangmingjuan0320@gmail.com', 
+                                to: email,
+                                subject: 'Island Furniture Member Account Activation',
+                                text:
+                                    'Greetings from Island Furniture...\n\n' +
+                                    'Click the link below to activate your account:\n\n' +
+                                    'http://' +
+                                    hostName +
+                                    '/activateMemberAccount.html?email=' +
+                                    email +
+                                    '&activateCode=' +
+                                    activationCode
+                            };
+
+                            emailer.sendMail(mailOptions, function (error, info) {
+                                conn.end(); 
+
+                                if (error) {
+                                    //console.error('EMAIL ERROR:', error);
+                                    return reject({
+                                        success: false,
+                                        errorMsg: 'Failed to send activation email'
                                     });
-                                    conn.end();
+                                } else {
+                                    //console.log('Email sent:', info.response);
                                     return resolve({ success: true });
                                 }
-                            }
-                        });
+                            });
+                        }
                     });
-                }
+                });
             });
         });
     },
@@ -356,54 +372,65 @@ var memberDB = {
             });
         });
     },
-    updateMemberProfile(details) {
+    updateMember: function (details) {
         return new Promise((resolve, reject) => {
-            const conn = db.getConnection();
-
-            conn.connect(err => {
+            var conn = db.getConnection();
+            conn.connect(function (err) {
                 if (err) {
                     console.log(err);
+                    conn.end();
                     return reject(err);
                 }
-
-                const sql = `
-                UPDATE memberentity
-                SET NAME=?, PHONE=?, CITY=?, ADDRESS=?, SECURITYQUESTION=?,
-                    SECURITYANSWER=?, AGE=?, INCOME=?, SERVICELEVELAGREEMENT=?
-                WHERE EMAIL=?
-            `;
-
-                const args = [
-                    details.name,
-                    details.phone,
-                    details.country,
-                    details.address,
-                    details.securityQuestion,
-                    details.securityAnswer,
-                    details.age,
-                    details.income,
-                    details.sla,
-                    details.email
-                ];
-
-                conn.query(sql, args, (err, result) => {
-                    conn.end();
-
-                    if (err) {
-                        console.log("SQL ERROR:", err);
-                        return reject(err);
+                else {
+                    var email = details.email;
+                    var name = details.name;
+                    var phone = details.phone;
+                    var country = details.country;
+                    var address = details.address;
+                    var securityQuestion = details.securityQuestion;
+                    var securityAnswer = details.securityAnswer;
+                    var age = details.age;
+                    var income = details.income;
+                    var sla = details.sla;
+                    var password = details.password;
+                    if (password == null || password == '') {
+                        var sql = 'UPDATE memberentity SET NAME=?, PHONE=?, CITY=?, ADDRESS=?, SECURITYQUESTION=?,'
+                            + 'SECURITYANSWER=?, AGE=?, INCOME=?, SERVICELEVELAGREEMENT=? WHERE EMAIL=?';
+                        var sqlArgs = [name, phone, country, address, securityQuestion, securityAnswer, age, income, sla, email];
+                        conn.query(sql, sqlArgs, function (err, result) {
+                            if (err) {
+                                conn.end();
+                                return reject(err);
+                            } else {
+                                if (result.affectedRows > 0) {
+                                    conn.end();
+                                    return resolve({ success: true });
+                                }
+                            }
+                        });
                     }
-
-                    if (result.affectedRows === 0) {
-                        return reject(new Error("No rows updated"));
+                    else {
+                        bcrypt.hash(password, 5, function (err, hash) {
+                            var sql = 'UPDATE memberentity SET NAME=?, PHONE=?, CITY=?, ADDRESS=?, SECURITYQUESTION=?,'
+                                + 'SECURITYANSWER=?, AGE=?, INCOME=?, SERVICELEVELAGREEMENT=?, PASSWORDHASH=? WHERE EMAIL=?';
+                            var sqlArgs = [name, phone, country, address, securityQuestion, securityAnswer, age, income, sla, hash, email];
+                            conn.query(sql, sqlArgs, function (err, result) {
+                                if (err) {
+                                    conn.end();
+                                    return reject(err);
+                                } else {
+                                    if (result.affectedRows > 0) {
+                                        conn.end();
+                                        return resolve({ success: true });
+                                    }
+                                }
+                            });
+                        });
                     }
-
-                    resolve({ success: true });
-                });
+                }
             });
         });
     },
-
     sendPasswordResetCode: function (email, url) {
         return new Promise((resolve, reject) => {
             var conn = db.getConnection();
@@ -539,34 +566,46 @@ var memberDB = {
             });
         });
     },
-    verifyPassword: function (email, password) {
-    return new Promise((resolve, reject) => {
-        var conn = db.getConnection();
-        conn.connect(err => {
-            if (err) return reject(err);
-
-            const sql = 'SELECT PASSWORDHASH FROM memberentity WHERE EMAIL=?';
-            conn.query(sql, [email], (err, result) => {
+    verifyPassword: function (id, password) {
+        return new Promise((resolve, reject) => {
+            var conn = db.getConnection();
+            conn.connect(function (err) {
                 if (err) {
+                    console.log(err);
                     conn.end();
                     return reject(err);
                 }
+                else {
+                    var sql = 'SELECT * FROM memberentity m WHERE m.ID=?';
+                    conn.query(sql, [id], (err, result) => {
+                        if (err) {
+                            conn.end();
+                            return reject(err);
+                        }
+                        else {
+                            if (result == null || result == undefined || result == '') {
+                                conn.end();
+                                return resolve({ success: false });
+                            }
+                            var member = new Member();
+                            member.email = result[0].EMAIL;
+                            member.passwordHash = result[0].PASSWORDHASH;
 
-                if (!result || result.length === 0) {
-                    conn.end();
-                    return resolve(false);
+                            bcrypt.compare(password, member.passwordHash, function (err, res) {
+                                if (res) {
+                                    conn.end();
+                                    return resolve({ success: true });
+                                } else {
+                                    conn.end();
+                                    return resolve({ success: false });
+                                }
+                            });
+                        }
+                    });
                 }
-
-                bcrypt.compare(password, result[0].PASSWORDHASH, (err, match) => {
-                    conn.end();
-                    if (err) return reject(err);
-                    resolve(match);
-                });
             });
         });
-    });
-}
-,
+    },
     updateMemberStripeCustomerId: function (email, customerId) {
         return new Promise((resolve, reject) => {
             var conn = db.getConnection();
@@ -620,16 +659,9 @@ var memberDB = {
         });
     }
 };
-module.exports = memberDB
+module.exports = memberDB;
 
 var generateRandomNumber = function (digits) {
     return crypto.randomBytes(Math.ceil(digits / 2)).toString('hex');
 };
 
-var emailer = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'islandfurnituresep@gmail.com',
-        pass: 'islandFurniture123'
-    }
-});
