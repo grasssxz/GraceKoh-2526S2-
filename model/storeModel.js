@@ -2,51 +2,30 @@ var db = require('./databaseConfig.js');
 var Store = require('./store.js')
 var storeDB = {
     getItemQuantity: function (sku, storeId) {
-        return new Promise( ( resolve, reject ) => {
-            var conn = db.getConnection();
-            conn.connect(function (err) {
-                if (err) {
-                    console.log(err);
-                    conn.end();
-                    return reject(err);
-                }
-                else {
-                    if(storeId == -1) {
-                        var sql = 'SELECT sum(l.QUANTITY) as sum FROM storeentity s, warehouseentity w, '
-                            +'storagebinentity sb, storagebinentity_lineitementity sbli, lineitementity l, '
-                            +'itementity i where s.WAREHOUSE_ID=w.ID and w.ID=sb.WAREHOUSE_ID and '
-                            +'sb.ID=sbli.StorageBinEntity_ID and sbli.lineItems_ID=l.ID and '
-                            +'l.ITEM_ID=i.ID and i.SKU=? and sb.TYPE = "Outbound"';
-                        conn.query(sql, [sku], function (err, result) {
-                            if (err) {
-                                conn.end();
-                                return reject(err);
-                            } else {
-                                conn.end();
-                                return resolve(result);
-                            }
-                        });
-                    }
-                    else {
-                        var sql = 'SELECT sum(l.QUANTITY) as sum FROM storeentity s, warehouseentity w, '
-                            +'storagebinentity sb, storagebinentity_lineitementity sbli, lineitementity l, '
-                            +'itementity i where s.WAREHOUSE_ID=w.ID and w.ID=sb.WAREHOUSE_ID and '
-                            +'sb.ID=sbli.StorageBinEntity_ID and sbli.lineItems_ID=l.ID and l.ITEM_ID=i.ID '
-                            +'and s.ID=? and i.SKU=? and sb.TYPE = "Outbound"';
-                        conn.query(sql, [storeId, sku], function (err, result) {
-                            if (err) {
-                                conn.end();
-                                return reject(err);
-                            } else {
-                                conn.end();
-                                return resolve(result);
-                            }
-                        });
-                    }
-                }
+    return new Promise((resolve, reject) => {
+        var conn = db.getConnection();
+        conn.connect(function (err) {
+            if (err) {
+                conn.end();
+                return reject(err);
+            }
+
+            var sql = `
+                SELECT IFNULL(SUM(l.QUANTITY), 0) AS sum
+                FROM lineitementity l
+                JOIN itementity i ON l.ITEM_ID = i.ID
+                WHERE i.SKU = ?
+            `;
+
+            conn.query(sql, [sku], function (err, result) {
+                conn.end();
+                if (err) return reject(err);
+                return resolve(result);
             });
         });
-    },
+    });
+},
+
     getStoresByCountry: function (country) {
         return new Promise( ( resolve, reject ) => {
             var conn = db.getConnection();
@@ -113,34 +92,36 @@ var storeDB = {
             });
         });
     },
+
     getItemQuantityByStoreName: function (itemId, storeName) {
-        return new Promise( ( resolve, reject ) => {
-            var conn = db.getConnection();
-            conn.connect(function (err) {
-                if (err) {
-                    console.log(err);
-                    conn.end();
-                    return reject(err);
-                }
-                else {
-                    var sql = 'SELECT sum(l.QUANTITY) as sum FROM storeentity s, warehouseentity w,'
-                        + ' storagebinentity sb, storagebinentity_lineitementity sbli, lineitementity l, itementity i'
-                        + ' where s.WAREHOUSE_ID=w.ID and w.ID=sb.WAREHOUSE_ID and sb.ID=sbli.StorageBinEntity_ID'
-                        + ' and sbli.lineItems_ID=l.ID and l.ITEM_ID=i.ID and i.ID=? and s.ID='
-                        + ' (SELECT ID FROM storeentity WHERE NAME=?) and sb.TYPE = "Outbound"';
-                    conn.query(sql, [itemId, storeName], function (err, result) {
-                        if (err) {
-                            conn.end();
-                            return reject(err);
-                        } else {
-                            conn.end();
-                            return resolve(result);
-                        }
-                    });
-                }
+    return new Promise((resolve, reject) => {
+        var conn = db.getConnection();
+        conn.connect(function (err) {
+            if (err) {
+                conn.end();
+                return reject(err);
+            }
+
+            var sql = `
+                SELECT IFNULL(SUM(l.QUANTITY), 0) AS sum
+                FROM lineitementity l
+                JOIN itementity i ON l.ITEM_ID = i.ID
+                JOIN storeentity s ON s.ID = (
+                    SELECT ID FROM storeentity WHERE NAME = ?
+                )
+                WHERE i.ID = ?
+            `;
+
+            conn.query(sql, [storeName, itemId], function (err, result) {
+                conn.end();
+                if (err) return reject(err);
+                return resolve(result);
             });
         });
-    },
+    });
+},
+
+
     setStoreQuantity: function (data) {
         return new Promise( ( resolve, reject ) => {
             var conn = db.getConnection();
