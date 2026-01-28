@@ -263,16 +263,16 @@ var memberDB = {
                             };
 
                             emailer.sendMail(mailOptions, function (error, info) {
-                                conn.end(); // ✅ close once
+                                conn.end(); 
 
                                 if (error) {
-                                    console.error('EMAIL ERROR:', error);
+                                    //console.error('EMAIL ERROR:', error);
                                     return reject({
                                         success: false,
                                         errorMsg: 'Failed to send activation email'
                                     });
                                 } else {
-                                    console.log('Email sent:', info.response);
+                                    //console.log('Email sent:', info.response);
                                     return resolve({ success: true });
                                 }
                             });
