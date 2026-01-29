@@ -1,208 +1,201 @@
-<script src="../checkCountry.js" ></script>
-<html>
-    <script src="../../header.js"></script>
-    <body>
-        <script>
-            var countryPrefix = localStorage.getItem('urlPrefix');
-            //get sku from query parameter
-            var currentUrl = new URL(window.location.href);
-            var sku = currentUrl.searchParams.get("sku");
-            var memberEmail = sessionStorage.getItem('memberEmail');
-            if(sku == null || sku == '') {
-                window.location.href = '/B/' + countryPrefix + '/index.html';
-            }
-            var countryId = localStorage.getItem('countryId');
-            fetch(new Request('/api/getFurnitureBySku?sku=' + sku + '&countryId=' + countryId,
-                {
-                    method: 'GET'
-                })).then(function (response) {
-                    return response.json();
-                }).then(function (furniture) {
-                    //set furniture details
-                    document.getElementById("imgFurniture").setAttribute('src', furniture.imageURL);
-                
-                    if(memberEmail != null && memberEmail != '') {
-                        document.getElementById("addToCartBtn").innerHTML = '<button class="btn btn-primary" onclick="addToCart(\''
-                        + furniture.sku + '\',\'' + furniture.id + '\',' + furniture.price + ',\'' + furniture.name + '\',\''
-                        + furniture.imageURL + '\')">Add To Cart</button>';
-                    }
-               
-                    document.getElementById("categoryLink").innerHTML = furniture.category;
-                    document.getElementById("categoryLink").setAttribute('href', '/B/' + countryPrefix
-                        + '/furnitureCategory.html?cat=' + encodeURIComponent(furniture.category));
+<script src="../checkCountry.js"></script>
+<script src="../../header.js"></script>
 
-                    var selectOptions = '<option></option>';
-                    var storeID = currentUrl.searchParams.get("storeID");
-                    var storesInCountry = JSON.parse(localStorage.getItem('storesInCountry'));
-                    for (i = 0; i < storesInCountry.length; i++) {
-                        var store = storesInCountry[i];
-                        if(store.id == storeID) {
-                            selectOptions += '<option selected value="' + store.id + '">' + store.name + '</option>';
-                        }
-                        else {
-                            selectOptions += '<option value="' + store.id + '">' + store.name + '</option>';
-                        }
-                    }
-                    document.getElementById("storeID").innerHTML = selectOptions;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Furniture Details</title>
+</head>
 
-                    var quantityDivTxt = 'Status: ';
-                    var itemQty = currentUrl.searchParams.get("itemQty");
-                    if(itemQty != null) {
-                        quantityDivTxt += itemQty > 0 ? 'Available':'Unavailable';
-                        quantityDivTxt += '<br/>Remaining Qty: ' + itemQty;
-                        document.getElementById("quantityDiv").innerHTML = '\
-                            <div class="col-md-6">\
-                                ' + quantityDivTxt + '\
-                            </div>';
-                    }
-                }).catch(function(error) {
-                    console.log(error);
-                });
+<body>
+<script>
+/* =======================
+   INITIAL SETUP
+======================= */
+const countryPrefix = localStorage.getItem('urlPrefix');
+const countryId = localStorage.getItem('countryId');
+const memberEmail = sessionStorage.getItem('memberEmail');
 
-            function addToCart(sku,id,price,name,imageURL) {
-                fetch(new Request('/api/getItemQuantity?sku=' + sku + '&storeId=-1',
-                {
-                    method: 'GET'
-                })).then(function (response) {
-                    return response.json();
-                }).then(function (data) {
-                    var quantity = data[0].sum;
-                    //if there is not enough quantity for a product to be added to the cart
-                    if(quantity == null || quantity == '') {
-                        var url = window.location.origin + window.location.pathname;
-                        window.location.href = url + '?sku=' + sku + '&errMsg=Item not added to cart, not enough quantity available.';
-                    }
-                    else {
-                        var allOk = true;
-                        var shoppingCart = JSON.parse(sessionStorage.getItem('shoppingCart'));
-                        //if shopping cart is empty
-                        if(shoppingCart == null || shoppingCart == '') {
-                            shoppingCart = [];
-                            shoppingCart.push({
-                                id: id,
-                                sku: sku,
-                                price: price,
-                                name: name,
-                                imgURL: imageURL,
-                                quantity: 1
-                            });
-                        }
-                        else {
-                            var exist = false;
-                            for(i = 0; i < shoppingCart.length; i++) {
-                                var cartItem = shoppingCart[i];
-                                //if item already exists in the cart, add 1 to the quantity
-                                if(cartItem.sku == sku) {
-                                    if (shoppingCart[i].quantity == quantity) {
-                                        var url = window.location.origin + window.location.pathname;
-                                        window.location.href = url + '?sku=' + sku + '&errMsg=Item not added to cart, not enough quantity available.';
-                                        exist = true;
-                                        allOk = false;
-                                    }
-                                    else {
-                                        shoppingCart[i].quantity += 1;
-                                        exist = true;
-                                    }
-                                }
-                            }
-                            //if item is new in the cart
-                            if (!exist) {
-                                shoppingCart.push({
-                                    id: id,
-                                    sku: sku,
-                                    price: price,
-                                    name: name,
-                                    imgURL: imageURL,
-                                    quantity: 1
-                                });
-                            }
-                        }
-                        if (allOk) {
-                            sessionStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
-                            var url = window.location.origin + window.location.pathname;
-                            window.location.href = url + '?sku=' + sku + '&goodMsg=Successfully added!';
-                        }
-                    }
-                }).catch(function(error) {
-                    console.log(error);
-                });
-            }
+const currentUrl = new URL(window.location.href);
+const sku = currentUrl.searchParams.get("sku");
+const storeIDParam = currentUrl.searchParams.get("storeID");
 
-            function CheckItemAvail() {
-                var storeId = document.getElementById("storeID").value;
-                if(storeId != null && storeId != '') {
-                    fetch(new Request('/api/getItemQuantity?sku=' + sku + '&storeId=' + storeId,
-                    {
-                        method: 'GET'
-                    })).then(function (response) {
-                        return response.json();
-                    }).then(function (data) {
-                        var quantity = data[0].sum;
-                        if(quantity == null || quantity == '') {
-                            quantity = 0;
-                        }
-                        //refresh page with item's quantity in the query parameter to display to the user
-                        var url = window.location.origin + window.location.pathname;
-                        window.location.href = url + '?sku=' + sku + '&itemQty=' + quantity + '&storeID=' + storeId;
-                    }).catch(function(error) {
-                        console.log(error);
-                    });
-                }
-            }
-        </script>
-        <div class="body">
-            <script src="menu2.js"></script>
-            <div class="body">
-                <div role="main" class="main">
-                    <section class="page-top">
-                        <div class="container">
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <h2>Furnitures</h2>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                    <div class="container">
-                        <script src="/displayMessageLong.js"></script>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div>
-                                    <div class="thumbnail">
-                                        <img alt="" class="img-responsive img-rounded" id="imgFurniture">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="summary entry-summary">
-                                    <h2 class="shorter"><strong id="furnitureName"></strong></h2>
-                                    <div id="addToCartBtn"></div>
-                                    <p class="price"><h4 class="amount" id="price"></h4></p>
-                                    <strong>Description</strong>
-                                    <p class="taller" id="description"></p>
-                                    <p id="furnitureInfo"></p>
-                                    <div class="product_meta">
-                                        <span class="posted_in">Category: <a id="categoryLink" rel="tag"></a></span>
-                                    </div>
-                                    <br/><br/>
+if (!sku) {
+  window.location.href = `/B/${countryPrefix}/index.html`;
+}
 
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <form onsubmit="return false;">
-                                                View Item Availability<br/>
-                                                <select style="color: black;" name="storeID" id="storeID"></select><br/><br/>
-                                                <input type="submit" onclick="CheckItemAvail()" class="btn btn-primary btn-icon" value="Check Item Availability"/>
-                                            </form>
-                                        </div>
-                                        <div id="quantityDiv"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <hr class="tall">
-                        </div>
-                    </div>
-                </div>
-                <script src="../footer.js"></script>
-            </div>
-    </body>
+/* =======================
+   LOAD PRODUCT DETAILS
+======================= */
+fetch(`/api/getFurnitureBySku?sku=${sku}&countryId=${countryId}`)
+  .then(res => res.json())
+  .then(furniture => {
+
+    document.getElementById("imgFurniture").src = furniture.imageURL;
+    document.getElementById("furnitureName").innerText = furniture.name;
+    document.getElementById("description").innerText = furniture.description;
+    document.getElementById("price").innerText = `$${furniture.price}`;
+
+    document.getElementById("categoryLink").innerText = furniture.category;
+    document.getElementById("categoryLink").href =
+      `/B/${countryPrefix}/furnitureCategory.html?cat=${encodeURIComponent(furniture.category)}`;
+
+    if (memberEmail) {
+      document.getElementById("addToCartBtn").innerHTML = `
+        <button class="btn btn-primary"
+          onclick="addToCart(
+            '${furniture.sku}',
+            '${furniture.id}',
+            ${furniture.price},
+            '${furniture.name}',
+            '${furniture.imageURL}'
+          )">
+          Add To Cart
+        </button>
+      `;
+    }
+
+    populateStoreDropdown(storeIDParam);
+    if (storeIDParam) {
+      checkItemAvailability(storeIDParam);
+    }
+  })
+  .catch(console.error);
+
+/* =======================
+   STORE DROPDOWN
+======================= */
+function populateStoreDropdown(selectedId) {
+  const stores = JSON.parse(localStorage.getItem('storesInCountry')) || [];
+  let html = `<option value="">Select Store</option>`;
+
+  stores.forEach(store => {
+    html += `
+      <option value="${store.id}" ${store.id == selectedId ? 'selected' : ''}>
+        ${store.name}
+      </option>
+    `;
+  });
+
+  document.getElementById("storeID").innerHTML = html;
+}
+
+/* =======================
+   CHECK AVAILABILITY
+======================= */
+function checkItemAvailability(storeId) {
+  fetch(`/api/getItemQuantity?sku=${sku}&storeId=${storeId}`)
+    .then(res => res.json())
+    .then(data => {
+      let quantity = data[0]?.sum ?? 0;
+
+      document.getElementById("quantityDiv").innerHTML = `
+        <div class="col-md-6">
+          Status: <strong>${quantity > 0 ? 'Available' : 'Unavailable'}</strong><br/>
+          Remaining Qty: ${quantity}
+        </div>
+      `;
+    })
+    .catch(console.error);
+}
+
+/* =======================
+   ADD TO CART
+======================= */
+function addToCart(sku, id, price, name, imageURL) {
+
+  fetch(`/api/getItemQuantity?sku=${sku}&storeId=-1`)
+    .then(res => res.json())
+    .then(data => {
+      let availableQty = data[0]?.sum ?? 0;
+
+      if (availableQty <= 0) {
+        alert("Item not added. No stock available.");
+        return;
+      }
+
+      let cart = JSON.parse(sessionStorage.getItem('shoppingCart')) || [];
+      let item = cart.find(i => i.sku === sku);
+
+      if (item) {
+        if (item.quantity >= availableQty) {
+          alert("Item not added. Not enough stock.");
+          return;
+        }
+        item.quantity++;
+      } else {
+        cart.push({
+          id, sku, price, name,
+          imgURL: imageURL,
+          quantity: 1
+        });
+      }
+
+      sessionStorage.setItem('shoppingCart', JSON.stringify(cart));
+      alert("Item added to cart!");
+    })
+    .catch(console.error);
+}
+
+/* =======================
+   EVENT HANDLER
+======================= */
+function onCheckAvailability() {
+  const storeId = document.getElementById("storeID").value;
+  if (storeId) {
+    checkItemAvailability(storeId);
+  }
+}
+</script>
+
+<script src="menu2.js"></script>
+
+<div class="body">
+  <div role="main" class="main">
+
+    <section class="page-top">
+      <div class="container">
+        <h2>Furniture</h2>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="row">
+
+        <div class="col-md-6">
+          <img id="imgFurniture" class="img-responsive img-rounded" />
+        </div>
+
+        <div class="col-md-6">
+          <h2 id="furnitureName"></h2>
+          <div id="addToCartBtn"></div>
+
+          <h4 id="price"></h4>
+          <strong>Description</strong>
+          <p id="description"></p>
+
+          <div class="product_meta">
+            Category: <a id="categoryLink"></a>
+          </div>
+
+          <hr/>
+
+          <form onsubmit="return false;">
+            View Item Availability<br/>
+            <select id="storeID" onchange="onCheckAvailability()"></select><br/><br/>
+            <button class="btn btn-primary">Check Availability</button>
+          </form>
+
+          <div class="row" id="quantityDiv"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="../footer.js"></script>
+</body>
 </html>

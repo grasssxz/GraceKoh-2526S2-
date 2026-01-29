@@ -67,47 +67,47 @@ module.exports.getBestPromotionByCountry = function (countryId) {
   });
 };
 
-/* ======================================================
-   NEW FUNCTIONS FOR CHECKOUT & PAYMENT
-====================================================== */
+// /* ======================================================
+//    NEW FUNCTIONS FOR CHECKOUT & PAYMENT
+// ====================================================== */
 
-/**
- * Used ONLY by payment.js
- * Determines which promotions are eligible for checkout
- */
-module.exports.getEligiblePromotions = function ({ countryId }) {
-  return new Promise((resolve, reject) => {
-    const sql = `
-      SELECT *
-      FROM promotionentity
-      WHERE COUNTRY_ID = ?
-        AND STARTDATE <= CURDATE()
-        AND ENDDATE >= CURDATE()
-    `;
+// /**
+//  * Used ONLY by payment.js
+//  * Determines which promotions are eligible for checkout
+//  */
+// module.exports.getEligiblePromotions = function ({ countryId }) {
+//   return new Promise((resolve, reject) => {
+//     const sql = `
+//       SELECT *
+//       FROM promotionentity
+//       WHERE COUNTRY_ID = ?
+//         AND STARTDATE <= CURDATE()
+//         AND ENDDATE >= CURDATE()
+//     `;
 
-    const conn = db.getConnection();
-    conn.connect(err => {
-      if (err) return reject(err);
+//     const conn = db.getConnection();
+//     conn.connect(err => {
+//       if (err) return reject(err);
 
-      conn.query(sql, [countryId], (err, results) => {
-        conn.end();
-        if (err) return reject(err);
-        resolve(results);
-      });
-    });
-  });
-};
+//       conn.query(sql, [countryId], (err, results) => {
+//         conn.end();
+//         if (err) return reject(err);
+//         resolve(results);
+//       });
+//     });
+//   });
+// };
 
 
 
-/**
- * Pure calculation function
- * No DB access
- */
-module.exports.calculateDiscount = function (promotion, subtotal) {
-  if (!promotion) return 0;
+// /**
+//  * Pure calculation function
+//  * No DB access
+//  */
+// module.exports.calculateDiscount = function (promotion, subtotal) {
+//   if (!promotion) return 0;
 
-  // Percentage discount
-  return Math.round(subtotal * (promotion.DISCOUNTRATE / 100));
-};
+//   // Percentage discount
+//   return Math.round(subtotal * (promotion.DISCOUNTRATE / 100));
+// };
 
